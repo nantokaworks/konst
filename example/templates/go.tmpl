@@ -1,0 +1,43 @@
+package constants
+
+import "time"
+
+{{- range $name, $def := .Definitions }}
+  {{- if eq $def.Descriptor "const" }}
+// {{ $name }} 定数
+const {{ $name }} = {{ formatConstValue $def.Content }}
+  {{- end }}
+
+  {{- if eq $def.Descriptor "enum" }}
+// {{ $name }} 列挙型
+type {{ $name }} int
+
+const (
+  {{- range $key, $val := $def.Content.values }}
+	{{ $name }}{{ $key }} {{ $name }} = iota
+  {{- end }}
+)
+
+func (e {{ $name }}) String() string {
+	switch e {
+	  {{- range $key, $val := $def.Content.values }}
+	    {{- if ne $key "Unspecified" }}
+	case {{ $name }}{{ $key }}:
+		return "{{ $val }}"
+	    {{- end }}
+	  {{- end }}
+	default:
+		return "{{ index $def.Content.values "Unspecified" }}"
+	}
+}
+  {{- end }}
+
+  {{- if eq $def.Descriptor "object" }}
+// {{ $name }} 構造体
+type {{ $name }} struct {
+  {{- range $field, $info := $def.Content.fields }}
+	{{ $field }} {{ $info.type }}
+  {{- end }}
+}
+  {{- end }}
+{{- end }}

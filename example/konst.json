@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "definitions": {
+    "MaxItems": {
+      "descriptor": "const",
+      "content": {
+        "type": "int",
+        "value": 100
+      }
+    },
+    "LargeNumber": {
+      "descriptor": "const",
+      "content": {
+        "type": "int64",
+        "value": 9223372036854775807,
+        "tsMode": "number"
+      }
+    },
+    "DateAt": {
+      "descriptor": "const",
+      "content": {
+        "type": "date",
+        "value": "2025-04-04T12:34:56Z"
+      }
+    },
+    "DateStringAt": {
+      "descriptor": "const",
+      "content": {
+        "type": "date",
+        "value": "2025-04-04T12:34:56Z",
+        "tsMode": "string"
+      }
+    },
+    "Status": {
+      "descriptor": "enum",
+      "content": {
+        "values": {
+          "Inactive": "inactive",
+          "Active": "active",
+          "Pending": "pending"
+        }
+      }
+    },
+    "User": {
+      "descriptor": "object",
+      "content": {
+        "fields": {
+          "Id": { "type": "string" },
+          "Name": { "type": "string" },
+          "Age": { "type": "int" }
+        }
+      }
+    }
+  }
+}
