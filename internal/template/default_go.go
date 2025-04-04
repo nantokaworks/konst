@@ -1,7 +1,8 @@
 package template
 
 // 内蔵テンプレート（Go用）
-const defaultGoTemplate = `package constants
+const defaultGoTemplate = `package {{ .PackageName }}
+
 {{- if hasDate .Definitions }}
 import "time"
 {{- end }}

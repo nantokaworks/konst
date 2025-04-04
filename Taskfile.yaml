@@ -1,0 +1,18 @@
+version: "3"
+
+tasks:
+  gen:ts:
+    desc: "Generate TypeScript from konst.json"
+    cmds:
+      - go run . -s ./example/konst.json -o gen/konst.ts -f
+
+  gen:go:
+    desc: "Generate TypeScript from konst.json"
+    cmds:
+      - go run . -s ./example/konst.json -o gen/konst.go -f
+
+  gen:all:
+    desc: "Generate both TypeScript and Go from konst.json"
+    deps:
+      - gen:ts
+      - gen:go
