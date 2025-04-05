@@ -9,6 +9,8 @@ import (
 	"github.com/nantokaworks/konst/internal/types"
 )
 
+const VERSION string = "v0.1.0"
+
 func GetCommandOption() (*types.CommandOption, error) {
 
 	// コマンドライン引数のパース
@@ -17,7 +19,16 @@ func GetCommandOption() (*types.CommandOption, error) {
 	templateDirFlag := flag.String("t", "", "カスタムテンプレートディレクトリのパス（省略時は環境変数 KONST_TEMPLATES、なければ実行ファイルと同じ場所のtemplatesディレクトリを使用）")
 	forceFlag := flag.Bool("f", false, "既存ファイルを強制的に上書きする")
 	indentFlag := flag.Int("indent", 2, "インデント数（デフォルトは2）")
+	// 追加: バージョン表示用フラグ
+	versionFlag := flag.Bool("v", false, "バージョンを表示する")
+	versionLFlag := flag.Bool("version", false, "バージョンを表示する")
 	flag.Parse()
+
+	// バージョン表示処理
+	if *versionFlag || *versionLFlag {
+		fmt.Printf("Konst version %s\n", VERSION)
+		os.Exit(0)
+	}
 
 	//  スキーマファイルのパスを取得
 	inFile := *schemaFile
