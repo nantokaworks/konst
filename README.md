@@ -64,6 +64,62 @@
   - **value**: 実際のリテラル値  
   - **mode** (オプション): TypeScript 用の出力指定（例: `"number"`、`"string"` など）
 
+### 各型の対応
+
+- **int**  
+  → Go: int  
+  → TS: number
+
+- **int32**  
+  → Go: int32  
+  → TS: number
+
+- **int64**  
+  → Go: int64  
+  → TS: bigint  
+  ※ tsMode により "number" も指定可能
+
+- **uint**  
+  → Go: uint  
+  → TS: number  
+  ※ tsMode により "number" または "bigint" 指定可能
+
+- **uint32**  
+  → Go: uint32  
+  → TS: number  
+  ※ tsMode により "number" または "bigint" 指定可能
+
+- **uint64**  
+  → Go: uint64  
+  → TS: bigint  
+  ※ tsMode により "number" または "bigint" 指定可能
+
+- **float / float32**  
+  → Go: float32  
+  → TS: number
+
+- **float64**  
+  → Go: float64  
+  → TS: bigint  
+  ※ tsMode により "number" も指定可能
+
+- **string**  
+  → Go: string  
+  → TS: string
+
+- **bool**  
+  → Go: bool  
+  → TS: boolean
+
+- **date**  
+  → Go: time.Time  
+    (TSMode により "time.Time", "string", "int", "int64", **"timestamp"** [Unixミリ秒出力] が指定可能)  
+  → TS: Date  
+    (TSMode により "string", "date", "number" が指定可能)
+
+- **配列型**  
+  上記各型に対して、例: int[], string[], date[], bool[] などがサポートされます。
+
 ---
 
 ## インストール

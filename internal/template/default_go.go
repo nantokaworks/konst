@@ -8,11 +8,13 @@ import "time"
 
 {{- range $name, $def := .Definitions }}
 	{{- if eq $def.Type "date" }}
-		{{- if eq $def.DateMode "string" }}
+		{{- if eq $def.GoMode "string" }}
 const {{ $name }} = {{ formatConstValue $def }}
 		{{- else }}
 var {{ $name }} = {{ formatConstValue $def }}
 		{{- end }}
+	{{- else if (contains (asString $def.Type) "[]") }}
+var {{ $name }} = {{ formatConstValue $def }}
 	{{- else }}
 const {{ $name }} = {{ formatConstValue $def }}
 	{{- end }}

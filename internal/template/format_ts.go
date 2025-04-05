@@ -8,46 +8,52 @@ import (
 	"github.com/nantokaworks/konst/internal/types"
 )
 
-// formatTS は、JSON の値を TypeScript 用のリテラルに変換します。
-// DefinitionContent（または map[string]interface{}）にも対応します。
 func formatTS(value interface{}) string {
+	// 数値フォーマット用のヘルパー関数
+	formatNumeric := func(num float64, tsMode types.TSMode) string {
+		switch tsMode {
+		case types.ModeNumber:
+			return fmt.Sprintf("%d as const", int64(num))
+		case types.ModeBigInt:
+			return fmt.Sprintf("%dn as const", int64(num))
+		default:
+			// デフォルトは数値として出力
+			return fmt.Sprintf("%d as const", int64(num))
+		}
+	}
+
 	// ① map[string]interface{} の場合
 	if m, ok := value.(map[string]interface{}); ok {
 		if v, exists := m["value"]; exists {
-			if t, hasType := m["type"].(string); hasType {
-				// tsMode を string 経由で取得しているケースの場合は、enum に変換する
+			if tStr, hasType := m["type"].(string); hasType {
+				t := types.DefinitionType(tStr)
 				var tsMode types.TSMode
 				if mode, ok := m["tsMode"].(string); ok && mode != "" {
 					tsMode = types.TSMode(mode)
 				}
 				switch t {
-				case "int64", "uint64":
-					if tsMode == types.ModeNumber {
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%d as const", int64(num))
-						}
-					} else {
-						// TSModeBigInt またはその他の場合
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%dn as const", int64(num))
-						}
+				case types.DefinitionTypeInt64, types.DefinitionTypeUint64, types.DefinitionTypeFloat64:
+					if num, ok := v.(float64); ok {
+						return formatNumeric(num, tsMode)
 					}
-				case "int", "float":
+				case types.DefinitionTypeUint32, types.DefinitionTypeUint:
+					if num, ok := v.(float64); ok {
+						return formatNumeric(num, tsMode)
+					}
+				case types.DefinitionTypeInt, types.DefinitionTypeFloat, types.DefinitionTypeInt32, types.DefinitionTypeFloat32:
 					if num, ok := v.(float64); ok {
 						if num == float64(int(num)) {
 							return fmt.Sprintf("%d as const", int(num))
 						}
 						return fmt.Sprintf("%f as const", num)
 					}
-				case "date":
-					{
-						var dateMode types.DateMode
-						if dm, ok := m["mode"].(string); ok && dm != "" {
-							dateMode = types.DateMode(dm)
-						}
-						if dateMode == types.DateModeString {
-							return fmt.Sprintf("%q as const", v)
-						}
+				case types.DefinitionTypeDate:
+					switch tsMode {
+					case types.ModeString:
+						return fmt.Sprintf("%q as const", v)
+					case types.ModeDate:
+						return fmt.Sprintf("new Date(%q)", v)
+					default:
 						return fmt.Sprintf("new Date(%q)", v)
 					}
 				default:
@@ -62,26 +68,49 @@ func formatTS(value interface{}) string {
 		v := d.Value
 		t := d.Type
 		tsMode := d.TSMode
-		switch t {
-		case "int64", "uint64":
-			if num, ok := v.(float64); ok {
-				if tsMode == types.ModeNumber {
-					return fmt.Sprintf("%d as const", int64(num))
+		if strings.HasSuffix(string(t), "[]") {
+			if arr, ok := v.([]interface{}); ok {
+				var elems []string
+				for _, elem := range arr {
+					elems = append(elems, formatTS(elem))
 				}
-				return fmt.Sprintf("%dn as const", int64(num))
+				return "[" + strings.Join(elems, ", ") + "] as const"
 			}
-		case "int", "float":
+			return formatTS(v)
+		}
+		switch t {
+		case types.DefinitionTypeInt64, types.DefinitionTypeUint64, types.DefinitionTypeFloat64:
+			if num, ok := v.(float64); ok {
+				return formatNumeric(num, tsMode)
+			}
+		case types.DefinitionTypeUint32, types.DefinitionTypeUint:
+			if num, ok := v.(float64); ok {
+				return formatNumeric(num, tsMode)
+			}
+		case types.DefinitionTypeInt, types.DefinitionTypeFloat, types.DefinitionTypeInt32, types.DefinitionTypeFloat32:
 			if num, ok := v.(float64); ok {
 				if num == float64(int(num)) {
 					return fmt.Sprintf("%d as const", int(num))
 				}
 				return fmt.Sprintf("%f as const", num)
 			}
-		case "date":
-			if d.DateMode == string(types.DateModeString) {
+		case types.DefinitionTypeDate:
+			switch tsMode {
+			case types.ModeString:
 				return fmt.Sprintf("%q as const", v)
+			case types.ModeDate:
+				return fmt.Sprintf("new Date(%q)", v)
+			default:
+				return fmt.Sprintf("new Date(%q)", v)
 			}
-			return fmt.Sprintf("new Date(%q)", v)
+		case types.DefinitionTypeBool:
+			if b, ok := v.(bool); ok {
+				if b {
+					return "true as const"
+				}
+				return "false as const"
+			}
+			return fmt.Sprintf("%v as const", v)
 		default:
 			return fmt.Sprintf("%q as const", v)
 		}

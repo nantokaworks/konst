@@ -10,6 +10,14 @@ import (
 // formatGo は、JSON の値を Go 用のリテラルに変換します。
 // 対応: 文字列（日付の場合は time.Date(...) 形式）、数値、boolean、配列
 func formatGo(value interface{}) string {
+	// 数値フォーマットのヘルパー関数
+	formatNumber := func(v float64, isInt bool) string {
+		if isInt {
+			return fmt.Sprintf("%d", int(v))
+		}
+		return fmt.Sprintf("%f", v)
+	}
+
 	switch v := value.(type) {
 	case string:
 		if t, ok := tryParseDate(v); ok {
@@ -36,19 +44,13 @@ func formatGo(value interface{}) string {
 		}
 		allNumbers, allStrings, allBools := true, true, true
 		for _, elem := range v {
-			switch elem.(type) {
-			case float64:
-			default:
+			if _, ok := elem.(float64); !ok {
 				allNumbers = false
 			}
-			switch elem.(type) {
-			case string:
-			default:
+			if _, ok := elem.(string); !ok {
 				allStrings = false
 			}
-			switch elem.(type) {
-			case bool:
-			default:
+			if _, ok := elem.(bool); !ok {
 				allBools = false
 			}
 		}
@@ -60,11 +62,7 @@ func formatGo(value interface{}) string {
 				if num != float64(int(num)) {
 					isInt = false
 				}
-				if isInt {
-					elems = append(elems, fmt.Sprintf("%d", int(num)))
-				} else {
-					elems = append(elems, fmt.Sprintf("%f", num))
-				}
+				elems = append(elems, formatNumber(num, isInt))
 			}
 			if isInt {
 				return "[]int{" + strings.Join(elems, ", ") + "}"
@@ -79,44 +77,64 @@ func formatGo(value interface{}) string {
 		} else if allBools {
 			var elems []string
 			for _, elem := range v {
-				if elem.(bool) {
-					elems = append(elems, "true")
-				} else {
-					elems = append(elems, "false")
-				}
+				elems = append(elems, fmt.Sprintf("%t", elem.(bool)))
 			}
 			return "[]bool{" + strings.Join(elems, ", ") + "}"
 		}
 		return fmt.Sprintf("%#v", value)
 	case types.Definition:
 		val := v.Value
-		typ := v.Type
-		// mode は date の場合のみ使用する
+		typ := v.Type // DefinitionType
+		// 追加: 配列型の場合は value 部分を再帰的に処理する
+		if strings.HasSuffix(string(typ), "[]") {
+			return formatGo(val)
+		}
 		switch typ {
-		case "int64", "uint64":
+		case types.DefinitionTypeInt64, types.DefinitionTypeUint64, types.DefinitionTypeUint, types.DefinitionTypeFloat64:
 			if num, ok := val.(float64); ok {
 				return fmt.Sprintf("%d", int64(num))
 			}
-		case "int", "float":
+		case types.DefinitionTypeUint32:
+			if num, ok := val.(float64); ok {
+				return fmt.Sprintf("%d", uint32(num))
+			}
+		case types.DefinitionTypeInt, types.DefinitionTypeFloat, types.DefinitionTypeInt32, types.DefinitionTypeFloat32:
 			if num, ok := val.(float64); ok {
 				if num == float64(int(num)) {
 					return fmt.Sprintf("%d", int(num))
 				}
 				return fmt.Sprintf("%f", num)
 			}
-		case "date":
-			if v.DateMode == "string" {
+		case types.DefinitionTypeDate:
+			switch v.GoMode {
+			case types.GoModeString:
 				return fmt.Sprintf("%q", val)
+			case types.GoModeInt, types.GoModeInt64:
+				if t, ok := tryParseDate(val.(string)); ok {
+					return fmt.Sprintf("%d", t.Unix())
+				}
+				return fmt.Sprintf("0 /* invalid date: %q */", val)
+			case types.GoModeTimestamp: // TSMode == "timestamp"
+				if t, ok := tryParseDate(val.(string)); ok {
+					return fmt.Sprintf("%d", t.UnixNano()/1e6)
+				}
+				return fmt.Sprintf("0 /* invalid date: %q */", val)
+			default:
+				if t, ok := tryParseDate(val.(string)); ok {
+					year, month, day := t.Date()
+					hour, min, sec := t.Clock()
+					nsec := t.Nanosecond()
+					return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
+						year, monthConst(int(month)), day, hour, min, sec, nsec)
+				}
+				// フォールバック: 無効な日付文字列の場合
+				return fmt.Sprintf("time.Now() /* invalid date: %q */", val)
 			}
-			if t, ok := tryParseDate(val.(string)); ok {
-				year, month, day := t.Date()
-				hour, min, sec := t.Clock()
-				nsec := t.Nanosecond()
-				return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
-					year, monthConst(int(month)), day, hour, min, sec, nsec)
+		case types.DefinitionTypeBool:
+			if b, ok := val.(bool); ok {
+				return fmt.Sprintf("%t", b)
 			}
-			// フォールバック: 無効な日付文字列の場合
-			return fmt.Sprintf("time.Now() /* invalid date: %q */", val)
+			return fmt.Sprintf("%v", val)
 		default:
 			return fmt.Sprintf("%q", val)
 		}

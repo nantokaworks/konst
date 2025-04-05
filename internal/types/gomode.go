@@ -4,6 +4,9 @@ package types
 type GoMode string
 
 const (
-	GoModeNumber GoMode = "number"
-	GoModeBigInt GoMode = "bigint"
+	GoModeInt       GoMode = "int"
+	GoModeInt64     GoMode = "int64"
+	GoModeTime      GoMode = "time.Time"
+	GoModeString    GoMode = "string"
+	GoModeTimestamp GoMode = "timestamp"
 )

@@ -1,6 +1,7 @@
 package template
 
 import (
+	"strings"
 	"text/template"
 )
 
@@ -20,5 +21,6 @@ func createMap(spaces *int) map[string]interface{} {
 		"title":            title, // 変更: strings.Title から独自の title 関数へ
 		"asString":         asString,
 		"hasDate":          hasDate,
+		"contains":         strings.Contains, // 追加: contains関数
 	}
 }
