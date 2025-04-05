@@ -1,4 +1,3 @@
-{{- range $name, $def := .Definitions }}
+{{- range $name, $def := .Definitions -}}
 export const {{ $name }} = {{ formatTS $def }};
-
-{{- end }}
+{{ end }}

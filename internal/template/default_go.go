@@ -1,10 +1,9 @@
 package template
 
 const defaultGoTemplate = `package {{ .GoPackage }}
-
-{{- if hasDate .Definitions }}
+{{ if hasDate .Definitions }}
 import "time"
-{{- end }}
+{{ end }}
 
 {{- range $name, $def := .Definitions }}
 	{{- if eq $def.Type "date" }}
