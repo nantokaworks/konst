@@ -10,11 +10,10 @@
   JSON 定義から Go と TypeScript のコードを生成します。
 
 - **JSON 定義**  
-  各定義は `descriptor` と `content` を利用して記述します。  
-  - **`descriptor`**: 定義の種類（`const`、`enum`、`object` など）を示します。  
-  - **`content`**: 定義内容そのものを保持します。  
-    定数の場合は型（例: `"int"`, `"int64"` など）やリテラル値（`value` キー）、TypeScript 用変換指定（`tsMode` キー）を指定。  
-    列挙型は `values`、オブジェクトは `fields` を使って定義します。
+  各定義は `type` と `value` を利用して記述します。  
+  - **`type`**: 定義の型（例: `"int"`, `"int64"`, `"date"` など）を示します。  
+  - **`value`**: 定義内容そのものを保持します。  
+    定数の場合は型（例: `"int"`, `"int64"` など）やリテラル値（`value` キー）、TypeScript 用変換指定（`mode` キー）を指定。
 
 - **カスタムテンプレート**  
   内蔵テンプレートに加え、カスタムテンプレートディレクトリを指定することで出力コードのフォーマットを自由にカスタマイズ可能です。  
@@ -25,61 +24,30 @@
 ## JSON 定義フォーマット例
 
 以下は、Konst で使用する JSON 定義ファイルのサンプルです。  
-この例では、定数、列挙型、オブジェクトの各定義が含まれています。
+この例では、定数の定義が含まれています。
 
 ```json
 {
   "version": "1.0",
+  "goPackage": "nantoka",
   "definitions": {
     "MaxItems": {
-      "descriptor": "const",
-      "content": {
-        "type": "int",
-        "value": 100
-      }
+      "type": "int",
+      "value": 100
     },
     "LargeNumber": {
-      "descriptor": "const",
-      "content": {
-        "type": "int64",
-        "value": 9223372036854775807,
-        "tsMode": "number"
-      }
+      "type": "int64",
+      "value": 9223372036854775807,
+      "mode": "number"
     },
     "DateAt": {
-      "descriptor": "const",
-      "content": {
-        "type": "date",
-        "value": "2025-04-04T12:34:56Z"
-      }
+      "type": "date",
+      "value": "2025-04-04T12:34:56Z"
     },
     "DateStringAt": {
-      "descriptor": "const",
-      "content": {
-        "type": "date",
-        "value": "2025-04-04T12:34:56Z",
-        "tsMode": "string"
-      }
-    },
-    "Status": {
-      "descriptor": "enum",
-      "content": {
-        "values": {
-          "Inactive": "inactive",
-          "Active": "active",
-          "Pending": "pending"
-        }
-      }
-    },
-    "User": {
-      "descriptor": "object",
-      "content": {
-        "fields": {
-          "Id": { "type": "string" },
-          "Name": { "type": "string" },
-          "Age": { "type": "int" }
-        }
-      }
+      "type": "date",
+      "value": "2025-04-04T12:34:56Z",
+      "mode": "string"
     }
   }
 }
@@ -88,23 +56,13 @@
 ### 各フィールドの説明
 
 - **version**  
-  JSON 定義フォーマットのバージョン。将来的な拡張に備えています。
+  JSON 定義フォーマットのバージョン。
 
 - **definitions**  
-  各定義はキー名で識別され、次の情報を持ちます:
-  - **descriptor**: 定義の種類  
-    - `"const"`: 定数  
-    - `"enum"`: 列挙型  
-    - `"object"`: オブジェクト（構造体／インターフェース）
-  - **content**: 定義内容を保持  
-    - 定数の場合:
-      - `"type"`: 定数の型（例: `"int"`, `"int64"`, `"string"`, `"string[]"`, `"date"` など）
-      - `"value"`: 実際のリテラル値
-      - `"tsMode"` (オプション): たとえば `"int64"` の場合、TypeScript で number として出力する場合に `"number"` を指定。`"date"` の場合、TypeScript で string として出力する場合に `"string"` を指定
-    - 列挙型の場合:
-      - `"values"`: 各メンバーの名前と値のマッピング
-    - オブジェクトの場合:
-      - `"fields"`: 各フィールドの名前と型情報
+  各定義はキー名で識別され、以下の情報を持ちます:
+  - **type**: 定義の型（例: `"int"`、`"int64"`, `"date"` など）
+  - **value**: 実際のリテラル値  
+  - **mode** (オプション): TypeScript 用の出力指定（例: `"number"`、`"string"` など）
 
 ---
 

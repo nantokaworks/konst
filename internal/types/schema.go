@@ -1,8 +1,8 @@
 package types
 
-// Data は全体の JSON 構造です。
-type Data struct {
+// Schema は全体の JSON 構造です。
+type Schema struct {
 	Version     string                `json:"version"`
-	PackageName string                `json:"package"`
+	GoPackage   string                `json:"goPackage"`
 	Definitions map[string]Definition `json:"definitions"`
 }

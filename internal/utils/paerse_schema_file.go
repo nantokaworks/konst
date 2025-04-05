@@ -2,23 +2,21 @@ package utils
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 
 	"github.com/nantokaworks/konst/internal/types"
 )
 
-func PaerseSchemaFile(filePath *string) (*types.Data, error) {
-
-	jsonBytes, err := os.ReadFile(*filePath)
+// PaerseSchemaFile は指定された JSON ファイルをパースします。
+func PaerseSchemaFile(filename *string) (*types.Schema, error) {
+	data, err := os.ReadFile(*filename)
 	if err != nil {
-		return nil, fmt.Errorf("JSONファイル読み込みエラー: %v", err)
+		return nil, err
+	}
+	var schema types.Schema
+	if err := json.Unmarshal(data, &schema); err != nil {
+		return nil, err
 	}
 
-	var data types.Data
-	if err := json.Unmarshal(jsonBytes, &data); err != nil {
-		return nil, fmt.Errorf("JSONパースエラー: %v", err)
-	}
-
-	return &data, nil
+	return &schema, nil
 }

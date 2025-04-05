@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "goPackage": "nantokachild",
+  "definitions": {
+    "ChildNum": {
+      "descriptor": "const",
+      "content": {
+        "type": "int",
+        "value": 100
+      }
+    }
+  }
+}

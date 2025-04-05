@@ -22,118 +22,73 @@ func formatTS(value interface{}) string {
 				}
 				switch t {
 				case "int64", "uint64":
-					if tsMode == types.TSModeNumber {
+					if tsMode == types.ModeNumber {
 						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%d", int64(num))
+							return fmt.Sprintf("%d as const", int64(num))
 						}
 					} else {
 						// TSModeBigInt またはその他の場合
 						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%dn", int64(num))
+							return fmt.Sprintf("%dn as const", int64(num))
 						}
 					}
 				case "int", "float":
 					if num, ok := v.(float64); ok {
 						if num == float64(int(num)) {
-							return fmt.Sprintf("%d", int(num))
+							return fmt.Sprintf("%d as const", int(num))
 						}
-						return fmt.Sprintf("%f", num)
+						return fmt.Sprintf("%f as const", num)
 					}
 				case "date":
-					// TSMode により出力を分岐
-					if tsMode == types.TSModeString {
-						// 文字列として出力
-						return fmt.Sprintf("%q", v)
-					} else {
-						// Date 型として new Date(...) を出力
+					{
+						var dateMode types.DateMode
+						if dm, ok := m["mode"].(string); ok && dm != "" {
+							dateMode = types.DateMode(dm)
+						}
+						if dateMode == types.DateModeString {
+							return fmt.Sprintf("%q as const", v)
+						}
 						return fmt.Sprintf("new Date(%q)", v)
 					}
 				default:
-					return fmt.Sprintf("%q", v)
+					return fmt.Sprintf("%q as const", v)
 				}
 			}
 			return formatTS(v)
 		}
 	}
-	// ② DefinitionContent 型（構造体の場合）
-	if d, ok := value.(types.DefinitionContent); ok {
-		if d.ConstContent != nil {
-			v := d.ConstContent.Value
-			t := d.ConstContent.Type
-			tsMode := d.ConstContent.TSMode // TSMode 型
-			switch t {
-			case "int64", "uint64":
-				if tsMode != "" {
-					if tsMode == types.TSModeNumber {
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%d", int64(num))
-						}
-					} else { // TSModeBigInt またはそれ以外
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%dn", int64(num))
-						}
-					}
-				} else {
-					if num, ok := v.(float64); ok {
-						return fmt.Sprintf("%dn", int64(num))
-					}
+	// ② Definition 型の場合
+	if d, ok := value.(types.Definition); ok {
+		v := d.Value
+		t := d.Type
+		tsMode := d.TSMode
+		switch t {
+		case "int64", "uint64":
+			if num, ok := v.(float64); ok {
+				if tsMode == types.ModeNumber {
+					return fmt.Sprintf("%d as const", int64(num))
 				}
-			case "int", "float":
-				if num, ok := v.(float64); ok {
-					if num == float64(int(num)) {
-						return fmt.Sprintf("%d", int(num))
-					}
-					return fmt.Sprintf("%f", num)
-				}
-			case "date":
-				if tsMode == types.TSModeString {
-					return fmt.Sprintf("%q", v)
-				}
-				return fmt.Sprintf("new Date(%q)", v)
-			default:
-				return fmt.Sprintf("%q", v)
+				return fmt.Sprintf("%dn as const", int64(num))
 			}
+		case "int", "float":
+			if num, ok := v.(float64); ok {
+				if num == float64(int(num)) {
+					return fmt.Sprintf("%d as const", int(num))
+				}
+				return fmt.Sprintf("%f as const", num)
+			}
+		case "date":
+			if d.DateMode == string(types.DateModeString) {
+				return fmt.Sprintf("%q as const", v)
+			}
+			return fmt.Sprintf("new Date(%q)", v)
+		default:
+			return fmt.Sprintf("%q as const", v)
 		}
 	}
-	// ③ ポインター型の DefinitionContent への対応
-	if d, ok := value.(*types.DefinitionContent); ok {
-		if d.ConstContent != nil {
-			v := d.ConstContent.Value
-			t := d.ConstContent.Type
-			tsMode := d.ConstContent.TSMode
-			switch t {
-			case "int64", "uint64":
-				if tsMode != "" {
-					if tsMode == types.TSModeNumber {
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%d", int64(num))
-						}
-					} else {
-						if num, ok := v.(float64); ok {
-							return fmt.Sprintf("%dn", int64(num))
-						}
-					}
-				} else {
-					if num, ok := v.(float64); ok {
-						return fmt.Sprintf("%dn", int64(num))
-					}
-				}
-			case "int", "float":
-				if num, ok := v.(float64); ok {
-					if num == float64(int(num)) {
-						return fmt.Sprintf("%d", int(num))
-					}
-					return fmt.Sprintf("%f", num)
-				}
-			case "date":
-				if tsMode == types.TSModeString {
-					return fmt.Sprintf("%q", v)
-				}
-				return fmt.Sprintf("new Date(%q)", v)
-			default:
-				return fmt.Sprintf("%q", v)
-			}
-		}
+	// ポインター型の Definition への対応
+	if d, ok := value.(*types.Definition); ok {
+		return formatTS(*d)
 	}
 	// ④ その他通常の型の処理
 	switch v := value.(type) {
@@ -141,25 +96,25 @@ func formatTS(value interface{}) string {
 		if t, ok := tryParseDate(v); ok {
 			return fmt.Sprintf("new Date(%q)", t.Format(time.RFC3339))
 		}
-		return fmt.Sprintf("%q", v)
+		return fmt.Sprintf("%q as const", v)
 	case float64:
 		if v == float64(int(v)) {
-			return fmt.Sprintf("%d", int(v))
+			return fmt.Sprintf("%d as const", int(v))
 		}
-		return fmt.Sprintf("%f", v)
+		return fmt.Sprintf("%f as const", v)
 	case bool:
 		if v {
-			return "true"
+			return "true as const"
 		}
-		return "false"
+		return "false as const"
 	case []interface{}:
 		var elems []string
 		for _, elem := range v {
 			elems = append(elems, formatTS(elem))
 		}
-		return "[" + strings.Join(elems, ", ") + "]"
+		return "[" + strings.Join(elems, ", ") + "] as const"
 	default:
-		return fmt.Sprintf("%v", v)
+		return fmt.Sprintf("%v as const", v)
 	}
 }
 

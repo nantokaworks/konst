@@ -88,9 +88,45 @@ func formatGo(value interface{}) string {
 			return "[]bool{" + strings.Join(elems, ", ") + "}"
 		}
 		return fmt.Sprintf("%#v", value)
+	case types.Definition:
+		val := v.Value
+		typ := v.Type
+		// mode は date の場合のみ使用する
+		switch typ {
+		case "int64", "uint64":
+			if num, ok := val.(float64); ok {
+				return fmt.Sprintf("%d", int64(num))
+			}
+		case "int", "float":
+			if num, ok := val.(float64); ok {
+				if num == float64(int(num)) {
+					return fmt.Sprintf("%d", int(num))
+				}
+				return fmt.Sprintf("%f", num)
+			}
+		case "date":
+			if v.DateMode == "string" {
+				return fmt.Sprintf("%q", val)
+			}
+			if t, ok := tryParseDate(val.(string)); ok {
+				year, month, day := t.Date()
+				hour, min, sec := t.Clock()
+				nsec := t.Nanosecond()
+				return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
+					year, monthConst(int(month)), day, hour, min, sec, nsec)
+			}
+			// フォールバック: 無効な日付文字列の場合
+			return fmt.Sprintf("time.Now() /* invalid date: %q */", val)
+		default:
+			return fmt.Sprintf("%q", val)
+		}
+	case *types.Definition:
+		return formatGo(*v)
 	default:
 		return fmt.Sprintf("%v", value)
 	}
+
+	return ""
 }
 
 // monthConst は、月番号から Go の time.Month 定数名を返します。
@@ -116,17 +152,10 @@ func formatConstValue(content interface{}) string {
 		}
 		return formatGo(m)
 	}
-	// ② DefinitionContent 型の場合
-	if d, ok := content.(types.DefinitionContent); ok {
-		if d.ConstContent != nil {
-			return formatGo(d.ConstContent.Value)
-		}
+	// ② Definition 型の場合 (旧 DefinitionContent)
+	if d, ok := content.(types.Definition); ok {
 		return formatGo(d)
-	}
-	if d, ok := content.(*types.DefinitionContent); ok {
-		if d.ConstContent != nil {
-			return formatGo(d.ConstContent.Value)
-		}
+	} else if d, ok := content.(*types.Definition); ok {
 		return formatGo(d)
 	}
 	// ③ その他の場合は、直接 formatGo を呼ぶ
@@ -143,7 +172,7 @@ func hasDate(defs map[string]types.Definition) bool {
 	}
 	for _, def := range defs {
 		// def.Content が nil でなければ、Content.Type をチェック
-		if def.Content.ConstContent != nil && def.Content.ConstContent.Type == "date" {
+		if def.Type == "date" {
 			return true
 		}
 	}

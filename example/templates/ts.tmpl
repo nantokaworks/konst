@@ -1,26 +1,4 @@
 {{- range $name, $def := .Definitions }}
-  {{- if eq $def.Descriptor "const" }}
 // {{ $name }} 定数
 export const {{ $name }} = {{ formatTS $def.Content }};
-  {{- end }}
-
-  {{- if eq $def.Descriptor "enum" }}
-// {{ $name }} 列挙型
-export const {{ $name }} = {
-  {{- range $key, $val := $def.Content.values }}
-    {{ $key }}: "{{ $val }}",
-  {{- end }}
-} as const;
-
-export type {{ $name }} = typeof {{ $name }}[keyof typeof {{ $name }}];
-  {{- end }}
-
-  {{- if eq $def.Descriptor "object" }}
-// {{ $name }} オブジェクト
-export interface {{ $name }} {
-  {{- range $field, $info := $def.Content.fields }}
-  {{ $field }}: {{ $info.type }};
-  {{- end }}
-}
-  {{- end }}
 {{- end }}
