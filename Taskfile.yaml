@@ -4,15 +4,31 @@ tasks:
   gen:ts:
     desc: "Generate TypeScript from konst.json"
     cmds:
-      - go run . -s ./example/konst.json -o gen/konst.ts -f
+      - go run . -i ./example/konst.json -o gen/konst.ts -f
 
   gen:go:
     desc: "Generate TypeScript from konst.json"
     cmds:
-      - go run . -s ./example/konst.json -o gen/konst.go -f
+      - go run . -i ./example/konst.json -o gen/konst.go -f
 
   gen:all:
     desc: "Generate both TypeScript and Go from konst.json"
     deps:
       - gen:ts
       - gen:go
+
+  gen:dir:ts:
+    desc: "Generate TypeScript from konst.json"
+    cmds:
+      - go run . -i ./example/multi -o gen/multi/ts -f
+
+  gen:dir:go:
+    desc: "Generate TypeScript from konst.json"
+    cmds:
+      - go run . -i ./example/multi -o gen/multi/go -f
+
+  gen:dir:all:
+    desc: "Generate both TypeScript and Go from multi file"
+    deps:
+      - gen:dir:ts
+      - gen:dir:go

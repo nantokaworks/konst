@@ -3,11 +3,8 @@
   "goPackage": "nantokachild",
   "definitions": {
     "ChildNum": {
-      "descriptor": "const",
-      "content": {
-        "type": "int",
-        "value": 100
-      }
+      "type": "int",
+      "value": 100
     }
   }
 }

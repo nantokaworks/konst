@@ -12,7 +12,7 @@ import (
 func GetCommandOption() (*types.CommandOption, error) {
 
 	// コマンドライン引数のパース
-	schemaFile := flag.String("s", "", "定数定義のJSONファイル（指定がなければ最初の引数を使用）")
+	schemaFile := flag.String("i", "", "定数定義のJSONファイル（指定がなければ最初の引数を使用）")
 	outputFile := flag.String("o", "", "出力先ファイル名（拡張子 .go または .ts で判定）")
 	templateDirFlag := flag.String("t", "", "カスタムテンプレートディレクトリのパス（省略時は環境変数 KONST_TEMPLATES、なければ実行ファイルと同じ場所のtemplatesディレクトリを使用）")
 	forceFlag := flag.Bool("f", false, "既存ファイルを強制的に上書きする")

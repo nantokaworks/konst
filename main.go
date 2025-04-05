@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
-	"github.com/nantokaworks/konst/internal/template"
+	"github.com/nantokaworks/konst/internal/process"
 	"github.com/nantokaworks/konst/internal/utils"
 )
 
@@ -18,8 +20,12 @@ func init() {
 }
 
 func main() {
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [inputFile]\n", os.Args[0])
+		fmt.Fprintln(os.Stderr, "Options:")
+		flag.PrintDefaults()
+	}
 
-	// コマンドライン引数の解析
 	option, err := utils.GetCommandOption()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "コマンドライン引数エラー: %v\n", err)
@@ -27,30 +33,46 @@ func main() {
 		os.Exit(1)
 	}
 
-	// スキーマのパース
-	schema, err := utils.PaerseSchemaFile(option.SchemaFile)
+	inputPath := *option.SchemaFile
+	info, err := os.Stat(inputPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "スキーマファイル読み込みエラー: %v\n", err)
+		fmt.Fprintf(os.Stderr, "入力パス取得エラー: %v\n", err)
 		os.Exit(1)
 	}
 
-	// テンプレート読み込み
-	tmpl, err := template.Load(option.OutputFile, option.TemplateDir, option.Indent)
+	// 既にディレクトリ入力の場合のチェックはそのまま
+	if info.IsDir() {
+		if filepath.Ext(*option.OutputFile) != "" {
+			fmt.Fprintln(os.Stderr, "エラー: 入力がディレクトリの場合、-o はディレクトリでなければなりません")
+			os.Exit(1)
+		}
+	}
+	isTS := strings.HasSuffix(*option.OutputFile, "ts")
+	var outDir string
+	// 単一ファイルの場合、-oがディレクトリなら入力ファイル名を利用
+	if !info.IsDir() && filepath.Ext(*option.OutputFile) == "" {
+		outDir = *option.OutputFile
+	} else {
+		outDir = *option.OutputFile
+	}
+
+	if info.IsDir() {
+		if err := process.ProcessDirectory(inputPath, outDir, option, isTS); err != nil {
+			fmt.Fprintf(os.Stderr, "ディレクトリ処理エラー: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// 単一ファイルの場合
+	if filepath.Ext(*option.OutputFile) == "" {
+		// 出力先はディレクトリの場合、processFileで入力ファイルのベースネームを利用して保存
+		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)
+	} else {
+		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)
+	}
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "テンプレート読み込みエラー: %v\n", err)
+		fmt.Fprintf(os.Stderr, "ファイル処理エラー: %v\n", err)
 		os.Exit(1)
 	}
-
-	// 出力ファイルの作成とオープン
-	outF := utils.CreateOutputFile(option.OutputFile, option.Force)
-	defer outF.Close()
-
-	// テンプレートの実行
-	if err := tmpl.Execute(outF, schema); err != nil {
-		fmt.Fprintf(os.Stderr, "テンプレート実行エラー: %v\n", err)
-		os.Exit(1)
-	}
-
-	// 出力完了メッセージ
-	fmt.Println("生成完了:", *option.OutputFile)
 }
