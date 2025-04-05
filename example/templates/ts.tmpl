@@ -1,4 +1,4 @@
 {{- range $name, $def := .Definitions }}
-// {{ $name }} 定数
-export const {{ $name }} = {{ formatTS $def.Content }};
+export const {{ $name }} = {{ formatTS $def }};
+
 {{- end }}
