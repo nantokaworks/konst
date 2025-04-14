@@ -6,4 +6,5 @@ type CommandOption struct {
 	TemplateDir *string // テンプレートディレクトリ
 	Force       *bool   // 強制オプション
 	Indent      *int    // インデント数
+	Mode        *string // 出力モード (go, ts)
 }

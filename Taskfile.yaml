@@ -20,12 +20,12 @@ tasks:
   gen:dir:ts:
     desc: "Generate TypeScript from konst.json"
     cmds:
-      - go run . -i ./example/multi -o gen/multi/ts -f
+      - go run . -i ./example/multi -o gen/multi/ts -f -m=ts
 
   gen:dir:go:
     desc: "Generate TypeScript from konst.json"
     cmds:
-      - go run . -i ./example/multi -o gen/multi/go -f
+      - go run . -i ./example/multi -o gen/multi/go -f -m=go
 
   gen:dir:all:
     desc: "Generate both TypeScript and Go from multi file"

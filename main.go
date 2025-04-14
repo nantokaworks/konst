@@ -47,7 +47,20 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	isTS := strings.HasSuffix(*option.OutputFile, "ts")
+
+	// 出力モードは、ディレクトリモードの場合、--mode フラグの値で判定
+	var isTS bool
+	if info.IsDir() {
+		if strings.ToLower(*option.Mode) == "ts" {
+			isTS = true
+		} else {
+			isTS = false
+		}
+	} else {
+		// 単一ファイルの場合は outputFile の拡張子から判定
+		isTS = strings.HasSuffix(*option.OutputFile, "ts")
+	}
+
 	var outDir string
 	// 単一ファイルの場合、-oがディレクトリなら入力ファイル名を利用
 	if !info.IsDir() && filepath.Ext(*option.OutputFile) == "" {
@@ -66,7 +79,6 @@ func main() {
 
 	// 単一ファイルの場合
 	if filepath.Ext(*option.OutputFile) == "" {
-		// 出力先はディレクトリの場合、processFileで入力ファイルのベースネームを利用して保存
 		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)
 	} else {
 		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)

@@ -19,9 +19,9 @@ func GetCommandOption() (*types.CommandOption, error) {
 	templateDirFlag := flag.String("t", "", "カスタムテンプレートディレクトリのパス（省略時は環境変数 KONST_TEMPLATES、なければ実行ファイルと同じ場所のtemplatesディレクトリを使用）")
 	forceFlag := flag.Bool("f", false, "既存ファイルを強制的に上書きする")
 	indentFlag := flag.Int("indent", 2, "インデント数（デフォルトは2）")
-	// 追加: バージョン表示用フラグ
 	versionFlag := flag.Bool("v", false, "バージョンを表示する")
 	versionLFlag := flag.Bool("version", false, "バージョンを表示する")
+	modeFlag := flag.String("m", "go", "出力モードを指定する（go, ts")
 	flag.Parse()
 
 	// バージョン表示処理
@@ -64,5 +64,6 @@ func GetCommandOption() (*types.CommandOption, error) {
 		TemplateDir: &tmplDir,
 		Force:       forceFlag,
 		Indent:      indentFlag,
+		Mode:        modeFlag, // 追加
 	}, nil
 }
