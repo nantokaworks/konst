@@ -14,7 +14,7 @@ import (
 // processFile は1つのJSONファイルを処理します。
 func ProcessFile(jsonPath, inputDir, outDir string, option *types.CommandOption, isTS bool) (string, error) {
 	// 個々のJSONファイルをパース
-	schema, err := utils.PaerseSchemaFile(&jsonPath)
+	schema, err := utils.ParseSchemaFile(&jsonPath)
 	if err != nil {
 		return "", err
 	}

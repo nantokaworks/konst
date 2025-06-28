@@ -10,11 +10,6 @@ import (
 	"golang.org/x/text/language"
 )
 
-// title は文字列の先頭を大文字に変換します（strings.Title の代替）。
-func title(s string) string {
-	return cases.Title(language.Und, cases.NoLower).String(s)
-}
-
 // toTitle は文字列をタイトルケースに変換します
 func toTitle(s string) string {
 	return cases.Title(language.Und, cases.NoLower).String(s)
@@ -25,13 +20,13 @@ func toCamel(s string) string {
 	if s == "" {
 		return s
 	}
-	
+
 	// アンダースコアで分割
 	parts := strings.Split(s, "_")
 	if len(parts) <= 1 {
 		return s
 	}
-	
+
 	// 最初の部分は小文字のまま、残りは先頭大文字
 	result := parts[0]
 	for i := 1; i < len(parts); i++ {
@@ -39,7 +34,7 @@ func toCamel(s string) string {
 			result += cases.Title(language.Und, cases.NoLower).String(parts[i])
 		}
 	}
-	
+
 	return result
 }
 

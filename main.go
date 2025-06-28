@@ -58,12 +58,12 @@ func dryRunPreview(inputPath, outputDir string, option *types.CommandOption) err
 	if err != nil {
 		return err
 	}
-	
+
 	// TypeScript の場合はindex.tsも生成される
 	if isTS {
 		files = append(files, filepath.Join(outputDir, "index.ts"))
 	}
-	
+
 	for _, file := range files {
 		fmt.Printf("  - %s\n", file)
 	}
@@ -86,7 +86,7 @@ func validateOnly(inputPath string) error {
 		if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".json") {
 			return nil
 		}
-		_, err = utils.PaerseSchemaFile(&path)
+		_, err = utils.ParseSchemaFile(&path)
 		if err != nil {
 			return fmt.Errorf("ファイル %s: %v", path, err)
 		}
@@ -96,12 +96,6 @@ func validateOnly(inputPath string) error {
 }
 
 func main() {
-	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] <inputDirectory>\n", os.Args[0])
-		fmt.Fprintln(os.Stderr, "Options:")
-		flag.PrintDefaults()
-	}
-
 	option, err := utils.GetCommandOption()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "コマンドライン引数エラー: %v\n", err)

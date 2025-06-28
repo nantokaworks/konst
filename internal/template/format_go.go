@@ -5,194 +5,225 @@ import (
 	"strings"
 
 	"github.com/nantokaworks/konst/internal/types"
+	"github.com/nantokaworks/konst/internal/utils"
 )
+
+// ============================================================================
+// 基本型フォーマット関数
+// ============================================================================
 
 // formatGo は、JSON の値を Go 用のリテラルに変換します。
 // 対応: 文字列（日付の場合は time.Date(...) 形式）、数値、boolean、配列
-func formatGo(value interface{}) string {
-	// 数値フォーマットのヘルパー関数
-	formatNumber := func(v float64, isInt bool) string {
-		if isInt {
-			return fmt.Sprintf("%d", int(v))
-		}
-		return fmt.Sprintf("%f", v)
-	}
-
+func formatGo(value any) string {
 	switch v := value.(type) {
 	case string:
-		if t, ok := tryParseDate(v); ok {
-			year, month, day := t.Date()
-			hour, min, sec := t.Clock()
-			nsec := t.Nanosecond()
-			return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
-				year, monthConst(int(month)), day, hour, min, sec, nsec)
-		}
-		return fmt.Sprintf("%q", v)
+		return formatGoString(v)
 	case float64:
-		if v == float64(int(v)) {
-			return fmt.Sprintf("%d", int(v))
-		}
-		return fmt.Sprintf("%f", v)
+		return formatGoFloat(v)
 	case bool:
-		if v {
-			return "true"
-		}
-		return "false"
+		return formatGoBool(v)
 	case []interface{}:
-		if len(v) == 0 {
-			return "nil"
-		}
-		allNumbers, allStrings, allBools := true, true, true
-		for _, elem := range v {
-			if _, ok := elem.(float64); !ok {
-				allNumbers = false
-			}
-			if _, ok := elem.(string); !ok {
-				allStrings = false
-			}
-			if _, ok := elem.(bool); !ok {
-				allBools = false
-			}
-		}
-		if allNumbers {
-			isInt := true
-			var elems []string
-			for _, elem := range v {
-				num := elem.(float64)
-				if num != float64(int(num)) {
-					isInt = false
-				}
-				elems = append(elems, formatNumber(num, isInt))
-			}
-			if isInt {
-				return "[]int{" + strings.Join(elems, ", ") + "}"
-			}
-			return "[]float64{" + strings.Join(elems, ", ") + "}"
-		} else if allStrings {
-			var elems []string
-			for _, elem := range v {
-				elems = append(elems, fmt.Sprintf("%q", elem.(string)))
-			}
-			return "[]string{" + strings.Join(elems, ", ") + "}"
-		} else if allBools {
-			var elems []string
-			for _, elem := range v {
-				elems = append(elems, fmt.Sprintf("%t", elem.(bool)))
-			}
-			return "[]bool{" + strings.Join(elems, ", ") + "}"
-		}
-		return fmt.Sprintf("%#v", value)
-	case types.Definition:
-		val := v.Value
-		typ := v.Type // DefinitionType
-		// 追加: 配列型の場合は value 部分を再帰的に処理する
-		if strings.HasSuffix(string(typ), "[]") {
-			return formatGo(val)
-		}
-		switch typ {
-		case types.DefinitionTypeInt64, types.DefinitionTypeUint64, types.DefinitionTypeUint, types.DefinitionTypeFloat64:
-			if num, ok := val.(float64); ok {
-				return fmt.Sprintf("%d", int64(num))
-			}
-		case types.DefinitionTypeUint32:
-			if num, ok := val.(float64); ok {
-				return fmt.Sprintf("%d", uint32(num))
-			}
-		case types.DefinitionTypeInt, types.DefinitionTypeFloat, types.DefinitionTypeInt32, types.DefinitionTypeFloat32:
-			if num, ok := val.(float64); ok {
-				if num == float64(int(num)) {
-					return fmt.Sprintf("%d", int(num))
-				}
-				return fmt.Sprintf("%f", num)
-			}
-		case types.DefinitionTypeDate:
-			switch v.GoMode {
-			case types.GoModeString:
-				return fmt.Sprintf("%q", val)
-			case types.GoModeInt, types.GoModeInt64:
-				if t, ok := tryParseDate(val.(string)); ok {
-					return fmt.Sprintf("%d", t.Unix())
-				}
-				return fmt.Sprintf("0 /* invalid date: %q */", val)
-			case types.GoModeTimestamp: // TSMode == "timestamp"
-				if t, ok := tryParseDate(val.(string)); ok {
-					return fmt.Sprintf("%d", t.UnixNano()/1e6)
-				}
-				return fmt.Sprintf("0 /* invalid date: %q */", val)
-			default:
-				if t, ok := tryParseDate(val.(string)); ok {
-					year, month, day := t.Date()
-					hour, min, sec := t.Clock()
-					nsec := t.Nanosecond()
-					return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
-						year, monthConst(int(month)), day, hour, min, sec, nsec)
-				}
-				// フォールバック: 無効な日付文字列の場合
-				return fmt.Sprintf("time.Now() /* invalid date: %q */", val)
-			}
-		case types.DefinitionTypeBool:
-			if b, ok := val.(bool); ok {
-				return fmt.Sprintf("%t", b)
-			}
-			return fmt.Sprintf("%v", val)
-		default:
-			return fmt.Sprintf("%q", val)
-		}
-	case *types.Definition:
-		return formatGo(*v)
+		return formatGoSlice(v)
 	default:
-		return fmt.Sprintf("%v", value)
+		return fmt.Sprintf("%v", v)
 	}
-
-	return ""
 }
 
-// monthConst は、月番号から Go の time.Month 定数名を返します。
-func monthConst(m int) string {
-	months := []string{
-		"time.January", "time.February", "time.March", "time.April",
-		"time.May", "time.June", "time.July", "time.August",
-		"time.September", "time.October", "time.November", "time.December",
+// formatGoString は文字列値をフォーマットします（日付チェック込み）
+func formatGoString(v string) string {
+	if t, ok := tryParseDate(v); ok {
+		year, month, day := t.Date()
+		hour, min, sec := t.Clock()
+		nsec := t.Nanosecond()
+		return fmt.Sprintf("time.Date(%d, %s, %d, %d, %d, %d, %d, time.UTC)",
+			year, utils.MonthConst(int(month)), day, hour, min, sec, nsec)
 	}
-	if m >= 1 && m <= 12 {
-		return months[m-1]
-	}
-	return fmt.Sprintf("time.Month(%d)", m)
+	return fmt.Sprintf("%q", v)
 }
 
-// formatConstValue は、定数の場合、content 内の "value" キーからリテラル値を抽出してフォーマットします。
-// こちらは Go 用の定数出力用です。
-func formatConstValue(content interface{}) string {
-	// ① map[string]interface{} として扱える場合
-	if m, ok := content.(map[string]interface{}); ok {
-		if v, exists := m["value"]; exists {
-			return formatGo(v)
+// formatGoFloat は浮動小数点数をフォーマットします
+func formatGoFloat(v float64) string {
+	if v == float64(int(v)) {
+		return fmt.Sprintf("%d", int(v))
+	}
+	return fmt.Sprintf("%f", v)
+}
+
+// formatGoBool はbool値をフォーマットします
+func formatGoBool(v bool) string {
+	if v {
+		return "true"
+	}
+	return "false"
+}
+
+// ============================================================================
+// 配列フォーマット関数
+// ============================================================================
+
+// formatGoSlice はスライスをフォーマットします
+func formatGoSlice(v []any) string {
+	if len(v) == 0 {
+		return "nil"
+	}
+
+	// 型の統一性をチェック
+	allNumbers, allStrings, allBools := true, true, true
+	for _, elem := range v {
+		if _, ok := elem.(float64); !ok {
+			allNumbers = false
 		}
-		return formatGo(m)
-	}
-	// ② Definition 型の場合 (旧 DefinitionContent)
-	if d, ok := content.(types.Definition); ok {
-		return formatGo(d)
-	} else if d, ok := content.(*types.Definition); ok {
-		return formatGo(d)
-	}
-	// ③ その他の場合は、直接 formatGo を呼ぶ
-	return formatGo(content)
-}
-
-func asString(v interface{}) string {
-	return fmt.Sprintf("%v", v)
-}
-
-func hasDate(defs map[string]types.Definition) bool {
-	if defs == nil {
-		return false
-	}
-	for _, def := range defs {
-		// def.Content が nil でなければ、Content.Type をチェック
-		if def.Type == "date" {
-			return true
+		if _, ok := elem.(string); !ok {
+			allStrings = false
+		}
+		if _, ok := elem.(bool); !ok {
+			allBools = false
 		}
 	}
-	return false
+
+	if allNumbers {
+		return formatGoNumberSlice(v)
+	} else if allStrings {
+		return formatGoStringSlice(v)
+	} else if allBools {
+		return formatGoBoolSlice(v)
+	}
+
+	// 混合型の場合
+	var elems []string
+	for _, elem := range v {
+		elems = append(elems, formatGo(elem))
+	}
+	return "[]interface{}{" + strings.Join(elems, ", ") + "}"
 }
+
+// formatGoNumberSlice は数値スライスをフォーマットします
+func formatGoNumberSlice(v []any) string {
+	isInt := true
+	var elems []string
+	for _, elem := range v {
+		num := elem.(float64)
+		if num != float64(int(num)) {
+			isInt = false
+		}
+		if isInt {
+			elems = append(elems, fmt.Sprintf("%d", int(num)))
+		} else {
+			elems = append(elems, fmt.Sprintf("%f", num))
+		}
+	}
+	if isInt {
+		return "[]int{" + strings.Join(elems, ", ") + "}"
+	}
+	return "[]float64{" + strings.Join(elems, ", ") + "}"
+}
+
+// formatGoStringSlice は文字列スライスをフォーマットします
+func formatGoStringSlice(v []any) string {
+	var elems []string
+	for _, elem := range v {
+		elems = append(elems, fmt.Sprintf("%q", elem.(string)))
+	}
+	return "[]string{" + strings.Join(elems, ", ") + "}"
+}
+
+// formatGoBoolSlice はboolスライスをフォーマットします
+func formatGoBoolSlice(v []any) string {
+	var elems []string
+	for _, elem := range v {
+		elems = append(elems, fmt.Sprintf("%t", elem.(bool)))
+	}
+	return "[]bool{" + strings.Join(elems, ", ") + "}"
+}
+
+// ============================================================================
+// 定数値フォーマット関数
+// ============================================================================
+
+// formatConstValue は、Definition の値を Go のコード形式にフォーマットします。
+func formatConstValue(content any) string {
+	def, ok := content.(types.Definition)
+	if !ok {
+		return formatGo(content)
+	}
+
+	switch def.Type {
+	case types.DefinitionTypeInt, types.DefinitionTypeInt32, types.DefinitionTypeInt64,
+		types.DefinitionTypeFloat, types.DefinitionTypeFloat32, types.DefinitionTypeFloat64:
+		return formatGo(def.Value)
+	case types.DefinitionTypeString:
+		return formatGo(def.Value)
+	case types.DefinitionTypeBool:
+		return formatGo(def.Value)
+	case types.DefinitionTypeDate:
+		return formatGoDate(def)
+	case types.DefinitionTypeTimestamp:
+		return formatGoTimestamp(def)
+	default:
+		// 配列型の場合
+		if strings.Contains(string(def.Type), "[]") {
+			return formatGoArray(def)
+		}
+		return formatGo(def.Value)
+	}
+}
+
+// formatGoDate は日付型の値をフォーマットします
+func formatGoDate(def types.Definition) string {
+	if def.GoMode == types.GoModeString {
+		return formatGo(def.Value)
+	}
+	if def.GoMode == types.GoModeInt64 {
+		if dateStr, ok := def.Value.(string); ok {
+			if t, ok := tryParseDate(dateStr); ok {
+				return fmt.Sprintf("%d", t.Unix())
+			}
+		}
+		return formatGo(def.Value)
+	}
+	return formatGo(def.Value)
+}
+
+// formatGoTimestamp はtimestamp型の値をフォーマットします
+func formatGoTimestamp(def types.Definition) string {
+	if timestampStr, ok := def.Value.(string); ok {
+		if t, ok := tryParseDate(timestampStr); ok {
+			return fmt.Sprintf("%d", t.Unix())
+		}
+	}
+	return formatGo(def.Value)
+}
+
+// formatGoArray は配列型の値をフォーマットします
+func formatGoArray(def types.Definition) string {
+	arrayValue, ok := def.Value.([]any)
+	if !ok {
+		return "nil"
+	}
+
+	var elements []string
+	baseType := strings.TrimSuffix(string(def.Type), "[]")
+
+	for _, elem := range arrayValue {
+		switch baseType {
+		case "date":
+			tempDef := types.Definition{
+				Type:   types.DefinitionTypeDate,
+				Value:  elem,
+				TSMode: def.TSMode,
+				GoMode: def.GoMode,
+			}
+			elements = append(elements, formatGoDate(tempDef))
+		default:
+			elements = append(elements, formatGo(elem))
+		}
+	}
+
+	return "{" + strings.Join(elements, ", ") + "}"
+}
+
+// ============================================================================
+// ヘルパー関数
+// ============================================================================
+
+// 汎用的なヘルパー関数は internal/utils/format_helpers.go に移動済み
