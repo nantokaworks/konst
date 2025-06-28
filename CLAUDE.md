@@ -111,3 +111,7 @@ go test ./...
 - テンプレートファイル: `go.tmpl`, `ts.tmpl`
 - 場所: `-t` オプション、`KONST_TEMPLATES` 環境変数、または実行ファイル同階層の `templates/`
 - Go テンプレート記法を使用
+
+## メモ
+
+- バージョンを上げる際はHISTORY.mdの更新も忘れずに
