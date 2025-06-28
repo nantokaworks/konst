@@ -1,0 +1,26 @@
+{
+  "version": "1.0",
+  "goPackage": "templates",
+  "definitions": {
+    "TwitchChatChannel": {
+      "type": "template",
+      "template": "twitch:chat:%twitch_id%",
+      "parameters": ["twitch_id"]
+    },
+    "ApiEndpoint": {
+      "type": "template", 
+      "template": "https://api.%domain%/v%version%/%endpoint%",
+      "parameters": ["domain", "version", "endpoint"]
+    },
+    "DatabaseConnectionString": {
+      "type": "template",
+      "template": "postgres://%username%:%password%@%host%:%port%/%database%",
+      "parameters": ["username", "password", "host", "port", "database"]
+    },
+    "RedisKey": {
+      "type": "template",
+      "template": "app:%env%:cache:%key%",
+      "parameters": ["env", "key"]
+    }
+  }
+}

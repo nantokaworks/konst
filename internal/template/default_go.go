@@ -1,17 +1,37 @@
 package template
 
 const defaultGoTemplate = `package {{ .GoPackage }}
-{{ if hasDate .Definitions }}
+{{- $needsStrings := or (hasEnum .Definitions) (hasTemplate .Definitions) }}
+{{- $needsTime := hasDate .Definitions }}
+{{- if or $needsStrings $needsTime }}
 import (
+{{- if or $needsStrings $needsTime }}
 	"errors"
+{{- end }}
+{{- if $needsStrings }}
+	"strings"
+{{- end }}
+{{- if $needsTime }}
 	"time"
+{{- end }}
 )
-{{ else if hasEnum .Definitions }}
-import "errors"
-{{ end }}
+{{- end }}
 
 {{- range $name, $def := .Definitions }}
-	{{- if eq $def.Type "enum" }}
+	{{- if eq $def.Type "template" }}
+// {{ $name }} template string
+const {{ $name }}Template = {{ printf "%q" $def.Template }}
+
+// Build{{ $name }} builds the template string with provided parameters
+func Build{{ $name }}({{- range $i, $param := $def.Parameters }}{{if $i}}, {{end}}{{ toCamel $param }} string{{- end }}) string {
+	result := {{ $name }}Template
+	{{- range $param := $def.Parameters }}
+	result = strings.ReplaceAll(result, "%{{ $param }}%", {{ toCamel $param }})
+	{{- end }}
+	return result
+}
+
+	{{- else if eq $def.Type "enum" }}
 // {{ $name }} enum values
 type {{ $name }} string
 
@@ -65,7 +85,7 @@ var {{ $name }} = {{ formatConstValue $def }}
 		{{- end }}
 	{{- else if (contains (asString $def.Type) "[]") }}
 var {{ $name }} = {{ formatConstValue $def }}
-	{{- else }}
+	{{- else if and (ne $def.Type "template") (ne $def.Type "enum") }}
 const {{ $name }} = {{ formatConstValue $def }}
 	{{- end }}
 {{- end }}`

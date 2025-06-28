@@ -1,0 +1,11 @@
+{
+  "version": "1.0",
+  "goPackage": "templates",
+  "definitions": {
+    "TwitchChatChannel": {
+      "type": "template",
+      "template": "twitch:chat:%twitch_id%",
+      "parameters": ["twitch_id"]
+    }
+  }
+}

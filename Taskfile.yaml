@@ -2,33 +2,52 @@ version: "3"
 
 tasks:
   gen:ts:
-    desc: "Generate TypeScript from konst.json"
+    desc: "Generate TypeScript from example directory"
     cmds:
-      - go run . -i ./example/konst.json -o gen/single -m ts -f
+      - go run . -i ./example -o gen/ts -m ts -f
 
   gen:go:
-    desc: "Generate Go from konst.json"
+    desc: "Generate Go from example directory"
     cmds:
-      - go run . -i ./example/konst.json -o gen/single -m go -f
+      - go run . -i ./example -o gen/go -m go -f
 
   gen:all:
-    desc: "Generate both TypeScript and Go from konst.json"
+    desc: "Generate both TypeScript and Go from example directory"
     deps:
       - gen:ts
       - gen:go
 
-  gen:dir:ts:
-    desc: "Generate TypeScript from multi directory"
+  test:validate:
+    desc: "Validate example JSON definitions"
     cmds:
-      - go run . -i ./example/multi -o gen/multi/ts -m ts -f
+      - go run . -i ./example -validate
 
-  gen:dir:go:
-    desc: "Generate Go from multi directory"
+  test:dry-run:
+    desc: "Show what would be generated from examples"
     cmds:
-      - go run . -i ./example/multi -o gen/multi/go -m go -f
+      - echo "=== Go generation preview ==="
+      - go run . -i ./example -o gen/go -dry-run
+      - echo ""
+      - echo "=== TypeScript generation preview ==="
+      - go run . -i ./example -o gen/ts -m ts -dry-run
 
-  gen:dir:all:
-    desc: "Generate both TypeScript and Go from multi file"
+  test:gen:
+    desc: "Test generation and verify output"
     deps:
-      - gen:dir:ts
-      - gen:dir:go
+      - test:validate
+      - gen:all
+    cmds:
+      - echo "=== Verifying Go generation ==="
+      - test -f gen/go/konst.go && echo "✓ konst.go generated"
+      - test -f gen/go/template.go && echo "✓ template.go generated"
+      - test -f gen/go/enum.go && echo "✓ enum.go generated"
+      - echo "=== Verifying TypeScript generation ==="
+      - test -f gen/ts/konst.ts && echo "✓ konst.ts generated"
+      - test -f gen/ts/template.ts && echo "✓ template.ts generated"
+      - test -f gen/ts/enum.ts && echo "✓ enum.ts generated"
+      - test -f gen/ts/index.ts && echo "✓ index.ts generated"
+
+  clean:
+    desc: "Clean generated files"
+    cmds:
+      - rm -rf gen/

@@ -9,7 +9,7 @@ import (
 	"github.com/nantokaworks/konst/internal/types"
 )
 
-const VERSION string = "v0.3.0"
+const VERSION string = "v0.3.3"
 
 func GetCommandOption() (*types.CommandOption, error) {
 

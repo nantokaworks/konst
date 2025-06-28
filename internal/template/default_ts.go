@@ -1,7 +1,20 @@
 package template
 
 const defaultTSTemplate = `{{- range $name, $def := .Definitions -}}
-{{- if eq $def.Type "enum" }}
+{{- if eq $def.Type "template" }}
+// {{ $name }} template string
+export const {{ $name }}Template = {{ printf "%q" $def.Template }};
+
+// Build{{ $name }} builds the template string with provided parameters
+export function build{{ $name }}(params: { {{- range $i, $param := $def.Parameters }}{{if $i}}, {{end}}{{ toCamel $param }}: string{{- end }} }): string {
+	let result = {{ $name }}Template;
+	{{- range $param := $def.Parameters }}
+	result = result.replaceAll("%{{ $param }}%", params.{{ toCamel $param }});
+	{{- end }}
+	return result;
+}
+
+{{- else if eq $def.Type "enum" }}
 // {{ $name }} enum values
 export const {{ $name }} = {
 	{{- range $value := $def.Values }}

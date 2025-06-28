@@ -14,7 +14,7 @@ import (
 
 func init() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [inputFile]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] <inputDirectory>\n", os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 	}
@@ -37,37 +37,35 @@ func dryRunPreview(inputPath, outputDir string, option *types.CommandOption) err
 	fmt.Printf("出力先: %s\n", outputDir)
 	fmt.Println("生成予定ファイル:")
 
-	if info.IsDir() {
-		var files []string
-		err := filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".json") {
-				return nil
-			}
-			rel, err := filepath.Rel(inputPath, path)
-			if err != nil {
-				return err
-			}
-			base := strings.TrimSuffix(rel, filepath.Ext(rel))
-			outFile := filepath.Join(outputDir, base+ext)
-			files = append(files, outFile)
+	if !info.IsDir() {
+		return fmt.Errorf("入力にはディレクトリを指定してください")
+	}
+
+	var files []string
+	err = filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".json") {
 			return nil
-		})
+		}
+		rel, err := filepath.Rel(inputPath, path)
 		if err != nil {
 			return err
 		}
-		
-		// TypeScript の場合はindex.tsも生成される
-		if isTS {
-			files = append(files, filepath.Join(outputDir, "index.ts"))
-		}
-		
-		for _, file := range files {
-			fmt.Printf("  - %s\n", file)
-		}
-	} else {
-		base := strings.TrimSuffix(filepath.Base(inputPath), filepath.Ext(inputPath))
+		base := strings.TrimSuffix(rel, filepath.Ext(rel))
 		outFile := filepath.Join(outputDir, base+ext)
-		fmt.Printf("  - %s\n", outFile)
+		files = append(files, outFile)
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	
+	// TypeScript の場合はindex.tsも生成される
+	if isTS {
+		files = append(files, filepath.Join(outputDir, "index.ts"))
+	}
+	
+	for _, file := range files {
+		fmt.Printf("  - %s\n", file)
 	}
 
 	return nil
@@ -80,31 +78,26 @@ func validateOnly(inputPath string) error {
 		return err
 	}
 
-	if info.IsDir() {
-		return filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
-			if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".json") {
-				return nil
-			}
-			_, err = utils.PaerseSchemaFile(&path)
-			if err != nil {
-				return fmt.Errorf("ファイル %s: %v", path, err)
-			}
-			fmt.Printf("✓ %s\n", path)
-			return nil
-		})
-	} else {
-		_, err = utils.PaerseSchemaFile(&inputPath)
-		if err != nil {
-			return err
-		}
-		fmt.Printf("✓ %s\n", inputPath)
+	if !info.IsDir() {
+		return fmt.Errorf("入力にはディレクトリを指定してください")
 	}
-	return nil
+
+	return filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info.IsDir() || !strings.HasSuffix(info.Name(), ".json") {
+			return nil
+		}
+		_, err = utils.PaerseSchemaFile(&path)
+		if err != nil {
+			return fmt.Errorf("ファイル %s: %v", path, err)
+		}
+		fmt.Printf("✓ %s\n", path)
+		return nil
+	})
 }
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] [inputFile]\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Usage: %s [OPTIONS] <inputDirectory>\n", os.Args[0])
 		fmt.Fprintln(os.Stderr, "Options:")
 		flag.PrintDefaults()
 	}
@@ -142,6 +135,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// ディレクトリのみ対応
+	if !info.IsDir() {
+		fmt.Fprintln(os.Stderr, "エラー: 入力にはディレクトリを指定してください")
+		os.Exit(1)
+	}
+
 	// 出力先が拡張子付きファイル名の場合はエラー
 	if filepath.Ext(*option.OutputFile) != "" {
 		fmt.Fprintln(os.Stderr, "エラー: -o にはディレクトリを指定してください")
@@ -151,15 +150,7 @@ func main() {
 	// 出力モードは --mode フラグで判定
 	isTS := strings.ToLower(*option.Mode) == "ts"
 
-	// 入力がファイルの場合、親ディレクトリを入力ディレクトリとして処理
-	var inputDir string
-	if info.IsDir() {
-		inputDir = inputPath
-	} else {
-		inputDir = filepath.Dir(inputPath)
-	}
-
-	if err := process.ProcessDirectory(inputDir, *option.OutputFile, option, isTS); err != nil {
+	if err := process.ProcessDirectory(inputPath, *option.OutputFile, option, isTS); err != nil {
 		fmt.Fprintf(os.Stderr, "処理エラー: %v\n", err)
 		os.Exit(1)
 	}
