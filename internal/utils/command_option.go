@@ -25,6 +25,7 @@ func GetCommandOption() (*types.CommandOption, error) {
 	validateFlag := flag.Bool("validate", false, "JSON定義の検証のみを行う（コード生成は行わない）")
 	dryRunFlag := flag.Bool("dry-run", false, "実際の生成は行わず、生成予定のファイル一覧を表示する")
 	watchFlag := flag.Bool("watch", false, "ファイル変更を監視して自動生成する（実験的機能）")
+	namingStyleFlag := flag.String("naming", "", "ファイル命名規則（kebab, camel, snake）TypeScriptはデフォルトでkebab、Goはデフォルトでsnake")
 	flag.Parse()
 
 	// バージョン表示処理
@@ -71,5 +72,6 @@ func GetCommandOption() (*types.CommandOption, error) {
 		Validate:    validateFlag,
 		DryRun:      dryRunFlag,
 		Watch:       watchFlag,
+		NamingStyle: namingStyleFlag,
 	}, nil
 }

@@ -50,8 +50,32 @@ func dryRunPreview(inputPath, outputDir string, option *types.CommandOption) err
 		if err != nil {
 			return err
 		}
-		base := strings.TrimSuffix(rel, filepath.Ext(rel))
-		outFile := filepath.Join(outputDir, base+ext)
+		
+		// ディレクトリとファイル名を分離
+		dir := filepath.Dir(rel)
+		fileName := filepath.Base(rel)
+		fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+		
+		// ファイル名を命名規則に従って変換
+		namingStyle := ""
+		if option.NamingStyle != nil {
+			namingStyle = *option.NamingStyle
+		}
+		convertedFileName := utils.ConvertFileName(fileName, namingStyle, isTS)
+		
+		// ディレクトリも変換
+		convertedDir := dir
+		if dir != "." {
+			convertedDir = utils.ConvertPath(dir, namingStyle, isTS)
+		}
+		
+		// 出力パスを構築
+		var outFile string
+		if convertedDir != "." {
+			outFile = filepath.Join(outputDir, convertedDir, convertedFileName+ext)
+		} else {
+			outFile = filepath.Join(outputDir, convertedFileName+ext)
+		}
 		files = append(files, outFile)
 		return nil
 	})

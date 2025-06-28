@@ -23,13 +23,38 @@ func ProcessFile(jsonPath, inputDir, outDir string, option *types.CommandOption,
 	if err != nil {
 		return "", err
 	}
-	base := strings.TrimSuffix(rel, filepath.Ext(rel))
+	
+	// ディレクトリとファイル名を分離
+	dir := filepath.Dir(rel)
+	fileName := filepath.Base(rel)
+	fileName = strings.TrimSuffix(fileName, filepath.Ext(fileName))
+	
+	// ファイル名を命名規則に従って変換
+	namingStyle := ""
+	if option.NamingStyle != nil {
+		namingStyle = *option.NamingStyle
+	}
+	convertedFileName := utils.ConvertFileName(fileName, namingStyle, isTS)
+	
+	// ディレクトリも変換
+	convertedDir := dir
+	if dir != "." {
+		convertedDir = utils.ConvertPath(dir, namingStyle, isTS)
+	}
+	
 	// 出力拡張子の決定
 	outExt := ".go"
 	if isTS {
 		outExt = ".ts"
 	}
-	outFilePath := filepath.Join(outDir, base+outExt)
+	
+	// 出力パスを構築
+	var outFilePath string
+	if convertedDir != "." {
+		outFilePath = filepath.Join(outDir, convertedDir, convertedFileName+outExt)
+	} else {
+		outFilePath = filepath.Join(outDir, convertedFileName+outExt)
+	}
 
 	tmpl, err := template.Load(&outFilePath, option.TemplateDir, option.Indent)
 	if err != nil {

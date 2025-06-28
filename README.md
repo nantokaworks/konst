@@ -159,6 +159,27 @@ konst -i definitions/ -o generated/ -m ts -f
 | `--watch` | ❌ | ファイル監視（実験的） | `--watch` |
 | `-t` | ❌ | カスタムテンプレートDir | `-t ./templates` |
 | `--indent` | ❌ | インデント数 | `--indent 4` |
+| `--naming` | ❌ | ファイル命名規則 | `--naming kebab` |
+
+### 📛 ファイル命名規則
+
+`--naming` オプションで出力ファイル・ディレクトリの命名規則を指定できます：
+
+- `kebab`: kebab-case（例: `user-status.ts`）
+- `camel`: camelCase（例: `userStatus.ts`）  
+- `snake`: snake_case（例: `user_status.go`）
+
+デフォルト: TypeScript は `kebab-case`、Go は `snake_case`
+
+```bash
+# TypeScript でデフォルト（kebab-case）
+konst -i ./definitions/user_status.json -o generated/ -m ts
+# → generated/user-status.ts
+
+# Go で camelCase を指定
+konst -i ./definitions/user-status.json -o generated/ -m go --naming camel
+# → generated/userStatus.go
+```
 
 ### 🎨 カスタムテンプレート
 
