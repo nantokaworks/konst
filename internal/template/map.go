@@ -17,6 +17,7 @@ func createMap(spaces *int) map[string]interface{} {
 	return template.FuncMap{
 		"formatGo":         formatGo,
 		"formatTS":         formatTS,
+		"formatTSConstValue": formatTSConstValue,
 		"formatConstValue": formatConstValue,
 		"convertTSType":    utils.ConvertTSType,
 		"indent":           indentLevel,

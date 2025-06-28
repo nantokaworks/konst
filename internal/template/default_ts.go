@@ -55,6 +55,6 @@ export function getDefault{{ $name }}(): {{ $name }}Type {
 {{- end }}
 
 {{- else }}
-export const {{ $name }} = {{ formatTS $def }};
+export const {{ $name }} = {{ formatTSConstValue $def }};
 {{- end }}
 {{ end }}`
