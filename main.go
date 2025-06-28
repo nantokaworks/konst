@@ -40,51 +40,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 既にディレクトリ入力の場合のチェックはそのまま
+	// 出力先が拡張子付きファイル名の場合はエラー
+	if filepath.Ext(*option.OutputFile) != "" {
+		fmt.Fprintln(os.Stderr, "エラー: -o にはディレクトリを指定してください")
+		os.Exit(1)
+	}
+
+	// 出力モードは --mode フラグで判定
+	isTS := strings.ToLower(*option.Mode) == "ts"
+
+	// 入力がファイルの場合、親ディレクトリを入力ディレクトリとして処理
+	var inputDir string
 	if info.IsDir() {
-		if filepath.Ext(*option.OutputFile) != "" {
-			fmt.Fprintln(os.Stderr, "エラー: 入力がディレクトリの場合、-o はディレクトリでなければなりません")
-			os.Exit(1)
-		}
-	}
-
-	// 出力モードは、ディレクトリモードの場合、--mode フラグの値で判定
-	var isTS bool
-	if info.IsDir() {
-		if strings.ToLower(*option.Mode) == "ts" {
-			isTS = true
-		} else {
-			isTS = false
-		}
+		inputDir = inputPath
 	} else {
-		// 単一ファイルの場合は outputFile の拡張子から判定
-		isTS = strings.HasSuffix(*option.OutputFile, "ts")
+		inputDir = filepath.Dir(inputPath)
 	}
 
-	var outDir string
-	// 単一ファイルの場合、-oがディレクトリなら入力ファイル名を利用
-	if !info.IsDir() && filepath.Ext(*option.OutputFile) == "" {
-		outDir = *option.OutputFile
-	} else {
-		outDir = *option.OutputFile
-	}
-
-	if info.IsDir() {
-		if err := process.ProcessDirectory(inputPath, outDir, option, isTS); err != nil {
-			fmt.Fprintf(os.Stderr, "ディレクトリ処理エラー: %v\n", err)
-			os.Exit(1)
-		}
-		return
-	}
-
-	// 単一ファイルの場合
-	if filepath.Ext(*option.OutputFile) == "" {
-		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)
-	} else {
-		_, err = process.ProcessFile(inputPath, filepath.Dir(inputPath), outDir, option, isTS)
-	}
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "ファイル処理エラー: %v\n", err)
+	if err := process.ProcessDirectory(inputDir, *option.OutputFile, option, isTS); err != nil {
+		fmt.Fprintf(os.Stderr, "処理エラー: %v\n", err)
 		os.Exit(1)
 	}
 }
