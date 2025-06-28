@@ -17,13 +17,16 @@ const (
 	DefinitionTypeBool      DefinitionType = "bool"
 	DefinitionTypeDate      DefinitionType = "date"
 	DefinitionTypeTimestamp DefinitionType = "timestamp" // 日付のtimestamp型
+	DefinitionTypeEnum      DefinitionType = "enum"      // 列挙型
 )
 
 // Definition は各定義の情報を表します。
 type Definition struct {
-	Type   DefinitionType `json:"type"`
-	Value  interface{}    `json:"value"`
-	TSMode TSMode         `json:"tsMode,omitempty"`
-	GoMode GoMode         `json:"goMode,omitempty"`
+	Type    DefinitionType `json:"type"`
+	Value   interface{}    `json:"value,omitempty"`
+	Values  []string       `json:"values,omitempty"`  // enum型の場合の値リスト
+	Default string         `json:"default,omitempty"` // enum型の場合のデフォルト値
+	TSMode  TSMode         `json:"tsMode,omitempty"`
+	GoMode  GoMode         `json:"goMode,omitempty"`
 	// DateMode フィールドを廃止し、TSModeで統一します。
 }

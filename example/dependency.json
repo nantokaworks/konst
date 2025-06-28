@@ -1,0 +1,18 @@
+{
+  "version": "1.0",
+  "goPackage": "example",
+  "definitions": {
+    "BaseRetries": {
+      "type": "int",
+      "value": 3
+    },
+    "MaxRetries": {
+      "type": "int", 
+      "value": "{{BaseRetries}} * 2"
+    },
+    "TimeoutSeconds": {
+      "type": "int",
+      "value": "{{MaxRetries}} * 5"
+    }
+  }
+}

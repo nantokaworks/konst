@@ -1,186 +1,265 @@
 # Konst
 
-**Konst** は、JSON で定義された定数、列挙型、オブジェクト（構造体／インターフェース）の情報から、Go および TypeScript のコードを自動生成するツールです。AIで生成されたコードを中心に調整中...  
+> JSON定義から Go・TypeScript のコードを自動生成するツール
 
----
+**Konst** は、JSON で定義された定数・列挙型の情報から Go と TypeScript のコードを自動生成するツールです。  
+API通信での型安全性を向上させ、多言語間での定数管理を一元化できます。
 
-## 特長
+## ✨ 特長
 
-- **多言語出力**  
-  JSON 定義から Go と TypeScript のコードを生成します。
+| 機能 | 説明 |
+|---|---|
+| 🔄 **多言語出力** | JSON定義から Go・TypeScript の型安全なコードを生成 |
+| 🛡️ **enum型完全サポート** | バリデーション・パーサー関数付きのenum自動生成 |
+| 🌐 **API通信に最適** | protobuf文字列通信でのenum値検証に最適 |
+| 🔧 **開発支援機能** | バリデーション・ドライラン・ウォッチモード |
+| 📁 **ディレクトリ処理** | 複数ファイル一括処理とindex.ts自動生成 |
 
-- **JSON 定義**  
-  各定義は `type` と `value` を利用して記述します。  
-  - **`type`**: 定義の型（例: `"int"`, `"int64"`, `"date"` など）を示します。  
-  - **`value`**: 定義内容そのものを保持します。  
-    定数の場合は型（例: `"int"`, `"int64"` など）やリテラル値（`value` キー）、TypeScript 用変換指定（`mode` キー）を指定。
+## 📋 JSON 定義フォーマット
 
-- **カスタムテンプレート**  
-  内蔵テンプレートに加え、カスタムテンプレートディレクトリを指定することで出力コードのフォーマットを自由にカスタマイズ可能です。  
-  テンプレートファイル名はシンプルに `go.tmpl` および `ts.tmpl` とします。
-
----
-
-## JSON 定義フォーマット例
-
-以下は、Konst で使用する JSON 定義ファイルのサンプルです。  
-この例では、定数の定義が含まれています。
+### 💻 基本的な定数定義
 
 ```json
 {
   "version": "1.0",
-  "goPackage": "nantoka",
+  "goPackage": "constants",
   "definitions": {
-    "MaxItems": {
+    "MaxRetries": {
       "type": "int",
-      "value": 100
+      "value": 3
     },
-    "LargeNumber": {
+    "ApiTimeout": {
       "type": "int64",
-      "value": 9223372036854775807,
-      "mode": "number"
-    },
-    "DateAt": {
-      "type": "date",
-      "value": "2025-04-04T12:34:56Z"
-    },
-    "DateStringAt": {
-      "type": "date",
-      "value": "2025-04-04T12:34:56Z",
-      "mode": "string"
+      "value": 30000,
+      "tsMode": "number"
     }
   }
 }
 ```
 
-### 各フィールドの説明
+### 🏷️ enum型定義（API通信に最適）
 
-- **version**  
-  JSON 定義フォーマットのバージョン。
+```json
+{
+  "version": "1.0", 
+  "goPackage": "enums",
+  "definitions": {
+    "UserStatus": {
+      "type": "enum",
+      "values": ["active", "inactive", "pending"],
+      "default": "pending"
+    },
+    "Priority": {
+      "type": "enum",
+      "values": ["low", "medium", "high"]
+    }
+  }
+}
+```
 
-- **definitions**  
-  各定義はキー名で識別され、以下の情報を持ちます:
-  - **type**: 定義の型（例: `"int"`、`"int64"`, `"date"` など）
-  - **value**: 実際のリテラル値  
-  - **mode** (オプション): TypeScript 用の出力指定（例: `"number"`、`"string"` など）
+### 📝 フィールド仕様
 
-### 各型の対応
+<details>
+<summary><strong>📌 共通フィールド</strong></summary>
 
-- **int**  
-  → Go: int  
-  → TS: number
+| フィールド | 必須 | 説明 | 例 |
+|---|---|---|---|
+| `version` | ✅ | JSON定義フォーマットのバージョン | `"1.0"` |
+| `goPackage` | ✅ | 生成されるGoパッケージ名 | `"constants"` |
 
-- **int32**  
-  → Go: int32  
-  → TS: number
+</details>
 
-- **int64**  
-  → Go: int64  
-  → TS: bigint  
-  ※ tsMode により "number" も指定可能
+<details>
+<summary><strong>🔢 定数型フィールド</strong></summary>
 
-- **uint**  
-  → Go: uint  
-  → TS: number  
-  ※ tsMode により "number" または "bigint" 指定可能
+| フィールド | 必須 | 説明 | 例 |
+|---|---|---|---|
+| `type` | ✅ | 定義の型 | `"int"`, `"string"`, `"bool"` |
+| `value` | ✅ | 実際のリテラル値 | `42`, `"hello"` |
+| `tsMode` | ❌ | TypeScript用出力指定 | `"number"`, `"bigint"` |
 
-- **uint32**  
-  → Go: uint32  
-  → TS: number  
-  ※ tsMode により "number" または "bigint" 指定可能
+</details>
 
-- **uint64**  
-  → Go: uint64  
-  → TS: bigint  
-  ※ tsMode により "number" または "bigint" 指定可能
+<details>
+<summary><strong>🏷️ enum型フィールド</strong></summary>
 
-- **float / float32**  
-  → Go: float32  
-  → TS: number
+| フィールド | 必須 | 説明 | 例 |
+|---|---|---|---|
+| `type` | ✅ | `"enum"` | `"enum"` |
+| `values` | ✅ | 文字列配列（選択肢） | `["active", "inactive"]` |
+| `default` | ❌ | デフォルト値 | `"active"` |
 
-- **float64**  
-  → Go: float64  
-  → TS: bigint  
-  ※ tsMode により "number" も指定可能
+</details>
 
-- **string**  
-  → Go: string  
-  → TS: string
+### 🗂️ サポートする型
 
-- **bool**  
-  → Go: bool  
-  → TS: boolean
+#### 基本型
+| 型 | Go出力 | TypeScript出力 | 備考 |
+|---|---|---|---|
+| `int` | `int` | `number` | |
+| `int32` | `int32` | `number` | |
+| `int64` | `int64` | `bigint` | tsMode:"number"で変更可 |
+| `string` | `string` | `string` | |
+| `bool` | `bool` | `boolean` | |
+| `date` | `time.Time` | `Date` | 各種モード指定可 |
 
-- **date**  
-  → Go: time.Time  
-    (TSMode により "time.Time", "string", "int", "int64", **"timestamp"** [Unixミリ秒出力] が指定可能)  
-  → TS: Date  
-    (TSMode により "string", "date", "number" が指定可能)
+#### 🆕 enum型（v0.3.0）
+| 型 | Go出力 | TypeScript出力 |
+|---|---|---|
+| `enum` | カスタム型 + バリデーション関数群 | const object + 型 + 関数群 |
 
-- **配列型**  
-  上記各型に対して、例: int[], string[], date[], bool[] などがサポートされます。
+#### 配列型
+各型に `[]` を付けて配列型として定義：
+- `int[]`, `string[]`, `bool[]`, `date[]`, `enum[]` など
 
----
-
-## インストール
-
-Konst は Go モジュールとして管理されているので、以下のようにインストールできます:
+## 🚀 インストール
 
 ```bash
 go install github.com/yourusername/konst@latest
 ```
 
-※ `github.com/yourusername/konst` は実際のリポジトリパスに置き換えてください。
+> ※ `github.com/yourusername/konst` は実際のリポジトリパスに置き換えてください
 
----
+## 📖 使い方
 
-## 使い方
+Konst は **出力ディレクトリ（`-o`）** と **出力モード（`-m`）** の指定が必要です。  
+入力は単一ファイルまたはディレクトリを指定できます。
 
-Konst は、出力先ファイル名（`-o` オプション）が必須です。  
-入力ファイルは `-i` オプションで指定しますが、指定がなければデフォルトで `constants.json` が使用されます。  
-また、カスタムテンプレートディレクトリは `-t` オプションまたは環境変数 `KONST_TEMPLATES` で指定可能です。
-
-### 基本例
+### 🔥 基本的な使い方
 
 ```bash
-konst constants.json -o=output/konst.ts
+# TypeScript生成
+konst -i constants.json -o generated/ -m ts
+
+# Go生成  
+konst -i constants.json -o generated/ -m go
+
+# ディレクトリ一括処理
+konst -i definitions/ -o generated/ -m ts -f
 ```
 
-または
+### 🛠️ 開発支援機能
+
+| 機能 | コマンド | 説明 |
+|---|---|---|
+| 🔍 **バリデーション** | `konst --validate -i constants.json` | JSON検証のみ実行 |
+| 👀 **ドライラン** | `konst --dry-run -i definitions/ -o generated/ -m ts` | 生成予定ファイル確認 |
+| 👁️ **ウォッチモード** | `konst --watch -i definitions/ -o generated/ -m ts` | ファイル変更監視（実験的） |
+
+### ⚙️ コマンドオプション
+
+| オプション | 必須 | 説明 | 例 |
+|---|---|---|---|
+| `-i` | ❌ | 入力ファイル/ディレクトリ | `-i constants.json` |
+| `-o` | ✅ | 出力ディレクトリ | `-o generated/` |
+| `-m` | ✅ | 出力モード（go/ts） | `-m ts` |
+| `-f` | ❌ | 強制上書き | `-f` |
+| `--validate` | ❌ | バリデーションのみ | `--validate` |
+| `--dry-run` | ❌ | 生成予定ファイル表示 | `--dry-run` |
+| `--watch` | ❌ | ファイル監視（実験的） | `--watch` |
+| `-t` | ❌ | カスタムテンプレートDir | `-t ./templates` |
+| `--indent` | ❌ | インデント数 | `--indent 4` |
+
+### 🎨 カスタムテンプレート
 
 ```bash
-konst -i=constants.json -o=output/konst.go
+# テンプレートファイルを go.tmpl、ts.tmpl として配置
+konst -i constants.json -o generated/ -m ts -t ./custom-templates/
 ```
 
-### カスタムテンプレートの利用
+## 💡 生成されるコード例
 
-カスタムテンプレートを使用する場合は、テンプレートディレクトリを指定してください。  
-テンプレートファイルは以下のように配置します:
+### 🏷️ enum型の生成例
 
-- **Go 用テンプレート**: `go.tmpl`
-- **TypeScript 用テンプレート**: `ts.tmpl`
+<details>
+<summary><strong>📋 JSON定義</strong></summary>
 
-例:
-
-```bash
-konst -i=constants.json -o=output/konst.go -t=/path/to/custom/templates
+```json
+{
+  "UserStatus": {
+    "type": "enum",
+    "values": ["active", "inactive", "pending"],
+    "default": "pending"
+  }
+}
 ```
 
-または環境変数を利用:
+</details>
 
-```bash
-export KONST_TEMPLATES=/path/to/custom/templates
-konst -i=constants.json -o=output/konst.ts
+<details>
+<summary><strong>🐹 Go出力例</strong></summary>
+
+```go
+type UserStatus string
+
+const (
+    UserStatusActive   UserStatus = "active"
+    UserStatusInactive UserStatus = "inactive"
+    UserStatusPending  UserStatus = "pending"
+)
+
+// バリデーション関数
+func IsValidUserStatus(value string) bool { /* ... */ }
+
+// パーサー関数（エラーハンドリング付き）
+func ParseUserStatus(value string) (UserStatus, error) { /* ... */ }
+
+// 全ての値を取得
+func GetAllUserStatusValues() []UserStatus { /* ... */ }
+
+// デフォルト値を取得
+func GetDefaultUserStatus() UserStatus { /* ... */ }
 ```
 
----
+</details>
 
-## テンプレート例
+<details>
+<summary><strong>🔷 TypeScript出力例</strong></summary>
 
-exampleを参照してください
+```typescript
+export const UserStatus = {
+    Active: "active",
+    Inactive: "inactive", 
+    Pending: "pending"
+} as const;
 
----
+export type UserStatusType = typeof UserStatus[keyof typeof UserStatus];
 
-## ライセンス
+// 型ガード関数
+export function isValidUserStatus(value: string): value is UserStatusType { /* ... */ }
+
+// パーサー関数（例外投げる版）
+export function parseUserStatus(value: string): UserStatusType { /* ... */ }
+
+// パーサー関数（undefinedを返す版）
+export function parseUserStatusSafe(value: string): UserStatusType | undefined { /* ... */ }
+
+// 全ての値を取得
+export function getAllUserStatusValues(): UserStatusType[] { /* ... */ }
+
+// デフォルト値を取得
+export function getDefaultUserStatus(): UserStatusType { /* ... */ }
+```
+
+</details>
+
+### 🌐 API通信での活用例
+
+```typescript
+// ✅ API受信時の安全な検証
+function handleUserData(data: any) {
+  if (!isValidUserStatus(data.status)) {
+    throw new Error('Invalid status from API');
+  }
+  const status = parseUserStatus(data.status); // 型安全 ✨
+}
+
+// ✅ protobuf通信での型安全性
+const user: User = {
+  status: UserStatus.Active // コンパイル時型チェック ✨
+};
+```
+
+## 📄 ライセンス
 
 このプロジェクトは MIT ライセンスの下で公開されています。

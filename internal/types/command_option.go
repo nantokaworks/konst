@@ -7,4 +7,7 @@ type CommandOption struct {
 	Force       *bool   // 強制オプション
 	Indent      *int    // インデント数
 	Mode        *string // 出力モード (go, ts)
+	Validate    *bool   // バリデーションのみ
+	DryRun      *bool   // ドライラン
+	Watch       *bool   // ウォッチモード
 }

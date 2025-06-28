@@ -14,16 +14,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # プロジェクトのビルド
 go build .
 
-# 実行（単一ファイル処理）
-go run . -i ./example/konst.json -o gen/konst.ts -f
-go run . -i ./example/konst.json -o gen/konst.go -f
+# システムインストール
+go install .
+
+# 基本実行（ディレクトリベース）
+konst -i ./example/enum.json -o gen/output -m ts -f
+konst -i ./example/multi -o gen/output -m go -f
 
 # Task タスクランナーを使用
-task gen:ts    # TypeScript 生成
-task gen:go    # Go コード生成  
-task gen:all   # 両方生成
-
-# ディレクトリ処理
+task gen:ts       # TypeScript 生成
+task gen:go       # Go コード生成  
+task gen:all      # 両方生成
 task gen:dir:ts   # ディレクトリから TypeScript 生成
 task gen:dir:go   # ディレクトリから Go 生成
 task gen:dir:all  # ディレクトリから両方生成
@@ -35,13 +36,16 @@ go test ./...
 ### コマンドラインオプション
 
 ```bash
--i string    # 入力JSONファイルまたはディレクトリ
--o string    # 出力ファイル名またはディレクトリ（必須）
--t string    # カスタムテンプレートディレクトリ
--f           # 既存ファイルを強制上書き
--m string    # 出力モード（go, ts）- ディレクトリ処理時
--indent int  # インデント数（デフォルト2）
--v, -version # バージョン表示
+-i string      # 入力JSONファイルまたはディレクトリ
+-o string      # 出力ディレクトリ（必須、バリデーション時除く）
+-m string      # 出力モード（go, ts）必須
+-f             # 既存ファイルを強制上書き
+-t string      # カスタムテンプレートディレクトリ
+--indent int   # インデント数（デフォルト2）
+--validate     # JSON定義の検証のみ（コード生成なし）
+--dry-run      # 生成予定ファイル一覧表示
+--watch        # ファイル変更監視（実験的）
+-v, --version  # バージョン表示
 ```
 
 ## アーキテクチャ
@@ -59,24 +63,28 @@ go test ./...
 
 ### 処理フロー
 
-1. **入力判定**: 単一ファイルかディレクトリかを判定 (`main.go:36-49`)
-2. **出力形式決定**: 拡張子またはモードフラグから Go/TypeScript を判定 (`main.go:52-62`)
-3. **処理実行**: 
-   - 単一ファイル: `process.ProcessFile()`
-   - ディレクトリ: `process.ProcessDirectory()`
-4. **コード生成**: テンプレートエンジンによる出力生成
+1. **バリデーション/ドライラン**: 特殊モードの場合は早期リターン
+2. **入力判定**: 単一ファイルかディレクトリかを判定  
+3. **出力形式決定**: `-m` フラグから Go/TypeScript を判定
+4. **処理実行**: 常に `process.ProcessDirectory()` を使用（統一化）
+5. **コード生成**: テンプレートエンジンによる出力生成
 
 ### JSON スキーマ形式
 
 ```json
 {
   "version": "1.0",
-  "goPackage": "package_name",
+  "goPackage": "package_name", 
   "definitions": {
     "ConstName": {
-      "type": "int|int64|string|bool|date|float|uint...",
+      "type": "int|string|bool|date|enum...",
       "value": "actual_value",
-      "mode": "number|string|bigint"  // TypeScript出力制御
+      "tsMode": "number|string|bigint"
+    },
+    "EnumName": {
+      "type": "enum",
+      "values": ["option1", "option2"],
+      "default": "option1"
     }
   }
 }
@@ -84,12 +92,19 @@ go test ./...
 
 ### 型マッピング
 
+#### 基本型
 - `int` → Go: `int`, TS: `number`
-- `int64` → Go: `int64`, TS: `bigint` (mode: "number" で `number`)
+- `int64` → Go: `int64`, TS: `bigint` (tsMode: "number" で `number`)
 - `string` → Go: `string`, TS: `string`
 - `bool` → Go: `bool`, TS: `boolean`
-- `date` → Go: `time.Time`, TS: `Date` (mode で変更可能)
-- 配列型もサポート: `int[]`, `string[]` など
+- `date` → Go: `time.Time`, TS: `Date` (各種モード指定可能)
+
+#### enum型（v0.3.0新機能）
+- `enum` → Go: カスタム型 + バリデーション関数群
+- `enum` → TS: const object + 型 + バリデーション関数群
+
+#### 配列型
+- 各型に `[]` 付加: `int[]`, `string[]`, `enum[]` など
 
 ## カスタムテンプレート
 

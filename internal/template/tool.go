@@ -5,12 +5,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/nantokaworks/konst/internal/types"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
 
 // title は文字列の先頭を大文字に変換します（strings.Title の代替）。
 func title(s string) string {
+	return cases.Title(language.Und, cases.NoLower).String(s)
+}
+
+// toTitle は文字列をタイトルケースに変換します
+func toTitle(s string) string {
 	return cases.Title(language.Und, cases.NoLower).String(s)
 }
 
@@ -37,4 +43,14 @@ func tryParseDate(s string) (time.Time, bool) {
 		return time.Time{}, false
 	}
 	return t, true
+}
+
+// hasEnum は定義の中にenum型があるかチェックします
+func hasEnum(definitions map[string]types.Definition) bool {
+	for _, def := range definitions {
+		if def.Type == types.DefinitionTypeEnum {
+			return true
+		}
+	}
+	return false
 }

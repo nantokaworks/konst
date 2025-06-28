@@ -9,7 +9,7 @@ import (
 	"github.com/nantokaworks/konst/internal/types"
 )
 
-const VERSION string = "v0.2.0"
+const VERSION string = "v0.3.0"
 
 func GetCommandOption() (*types.CommandOption, error) {
 
@@ -22,6 +22,9 @@ func GetCommandOption() (*types.CommandOption, error) {
 	versionFlag := flag.Bool("v", false, "バージョンを表示する")
 	versionLFlag := flag.Bool("version", false, "バージョンを表示する")
 	modeFlag := flag.String("m", "go", "出力モードを指定する（go, ts）")
+	validateFlag := flag.Bool("validate", false, "JSON定義の検証のみを行う（コード生成は行わない）")
+	dryRunFlag := flag.Bool("dry-run", false, "実際の生成は行わず、生成予定のファイル一覧を表示する")
+	watchFlag := flag.Bool("watch", false, "ファイル変更を監視して自動生成する（実験的機能）")
 	flag.Parse()
 
 	// バージョン表示処理
@@ -40,8 +43,8 @@ func GetCommandOption() (*types.CommandOption, error) {
 		}
 	}
 
-	// 出力先のチェック
-	if *outputFile == "" {
+	// 出力先のチェック（バリデーションモード以外では必須）
+	if *outputFile == "" && !*validateFlag {
 		return nil, fmt.Errorf("出力ファイル名を -o オプションで指定してください")
 	}
 
@@ -64,6 +67,9 @@ func GetCommandOption() (*types.CommandOption, error) {
 		TemplateDir: &tmplDir,
 		Force:       forceFlag,
 		Indent:      indentFlag,
-		Mode:        modeFlag, // 追加
+		Mode:        modeFlag,
+		Validate:    validateFlag,
+		DryRun:      dryRunFlag,
+		Watch:       watchFlag,
 	}, nil
 }

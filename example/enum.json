@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "goPackage": "example",
+  "definitions": {
+    "UserStatus": {
+      "type": "enum",
+      "values": ["active", "inactive", "pending"],
+      "default": "pending"
+    },
+    "Priority": {
+      "type": "enum", 
+      "values": ["low", "medium", "high"]
+    },
+    "MaxRetries": {
+      "type": "int",
+      "value": 3
+    }
+  }
+}
