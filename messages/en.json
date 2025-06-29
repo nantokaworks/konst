@@ -1,0 +1,17 @@
+{
+  "mode": "Mode",
+  "output_directory": "Output directory",
+  "files_to_be_generated": "Files to be generated",
+  "generated": "Generated",
+  "validation_success": "Validation successful: No issues found in JSON definitions",
+  "input_must_be_directory": "input must be a directory",
+  "output_must_be_directory": "-o option must specify a directory", 
+  "command_argument_error": "Command line argument error",
+  "validation_error": "Validation error",
+  "dry_run_error": "Dry-run error",
+  "input_path_error": "Input path error",
+  "processing_error": "Processing error",
+  "file_error": "file",
+  "output_required": "please specify output filename with -o option",
+  "executable_path_error": "executable path error"
+}

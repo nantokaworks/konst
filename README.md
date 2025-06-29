@@ -14,6 +14,7 @@ API通信での型安全性を向上させ、多言語間での定数管理を�
 | 🌐 **API通信に最適** | protobuf文字列通信でのenum値検証に最適 |
 | 🔧 **開発支援機能** | バリデーション・ドライラン・ウォッチモード |
 | 📁 **ディレクトリ処理** | 複数ファイル一括処理とindex.ts自動生成 |
+| 🗣️ **i18n対応** | 日本語・英語のヘルプメッセージとシステムロケール自動検出 |
 
 ## 📋 JSON 定義フォーマット
 
@@ -160,6 +161,7 @@ konst -i definitions/ -o generated/ -m ts -f
 | `-t` | ❌ | カスタムテンプレートDir | `-t ./templates` |
 | `--indent` | ❌ | インデント数 | `--indent 4` |
 | `--naming` | ❌ | ファイル命名規則 | `--naming kebab` |
+| `--locale` | ❌ | 🌐 言語設定（ja/en） | `--locale ja` |
 
 ### 📛 ファイル命名規則
 
@@ -180,6 +182,31 @@ konst -i ./definitions/user_status.json -o generated/ -m ts
 konst -i ./definitions/user-status.json -o generated/ -m go --naming camel
 # → generated/userStatus.go
 ```
+
+### 🌐 言語設定
+
+`--locale` オプションでヘルプメッセージの言語を指定できます：
+
+```bash
+# 日本語でヘルプを表示
+konst --help --locale=ja
+
+# 英語でヘルプを表示
+konst --help --locale=en
+
+# 環境変数での設定
+export KONST_LOCALE=ja
+konst --help
+
+# システムロケール自動検出（デフォルト）
+konst --help
+```
+
+**言語判定の優先順位:**
+1. `--locale` フラグ
+2. `KONST_LOCALE` 環境変数  
+3. システムロケール（`LC_ALL`, `LC_MESSAGES`, `LANG`, `LC_CTYPE`）
+4. デフォルト（英語）
 
 ### 🎨 カスタムテンプレート
 

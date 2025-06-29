@@ -6,11 +6,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nantokaworks/konst/internal/i18n"
 	"github.com/nantokaworks/konst/internal/types"
 	"github.com/nantokaworks/konst/internal/utils"
 )
 
-// processDirectory はディレクトリ内のJSONファイルを再帰的に処理します。
+// ProcessDirectory はディレクトリ内のJSONファイルを再帰的に処理します。
 func ProcessDirectory(inputDir, outDir string, option *types.CommandOption, isTS bool) error {
 	// まず全JSONファイルを読み込んで依存関係を解決
 	allDefinitions := make(map[string]types.Definition)
@@ -66,7 +67,7 @@ func ProcessDirectory(inputDir, outDir string, option *types.CommandOption, isTS
 				return err
 			}
 		}
-		fmt.Println("生成完了:", indexPath)
+		fmt.Printf("%s: %s\n", i18n.T(i18n.MsgGenerated), indexPath)
 	}
 	return nil
 }

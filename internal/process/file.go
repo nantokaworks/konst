@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nantokaworks/konst/internal/i18n"
 	"github.com/nantokaworks/konst/internal/template"
 	"github.com/nantokaworks/konst/internal/types"
 	"github.com/nantokaworks/konst/internal/utils"
@@ -68,7 +69,7 @@ func ProcessFile(jsonPath, inputDir, outDir string, option *types.CommandOption,
 	if err := tmpl.Execute(outF, schema); err != nil {
 		return "", err
 	}
-	fmt.Println("生成完了:", outFilePath)
+	fmt.Printf("%s: %s\n", i18n.T(i18n.MsgGenerated), outFilePath)
 	// TS出力の場合、相対パスを返す（拡張子抜き）
 	if isTS {
 		relOut, err := filepath.Rel(outDir, outFilePath)

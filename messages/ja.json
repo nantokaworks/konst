@@ -1,0 +1,17 @@
+{
+  "mode": "モード",
+  "output_directory": "出力先",
+  "files_to_be_generated": "生成予定ファイル",
+  "generated": "生成完了",
+  "validation_success": "バリデーション成功: JSON定義に問題ありません",
+  "input_must_be_directory": "入力にはディレクトリを指定してください",
+  "output_must_be_directory": "-o オプションにはディレクトリを指定してください",
+  "command_argument_error": "コマンドライン引数エラー",
+  "validation_error": "バリデーションエラー",
+  "dry_run_error": "ドライランエラー",
+  "input_path_error": "入力パス取得エラー",
+  "processing_error": "処理エラー",
+  "file_error": "ファイル",
+  "output_required": "出力ファイル名を -o オプションで指定してください",
+  "executable_path_error": "実行ファイルパス取得エラー"
+}

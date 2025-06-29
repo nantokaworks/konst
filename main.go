@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nantokaworks/konst/internal/i18n"
 	"github.com/nantokaworks/konst/internal/process"
 	"github.com/nantokaworks/konst/internal/types"
 	"github.com/nantokaworks/konst/internal/utils"
@@ -33,12 +34,12 @@ func dryRunPreview(inputPath, outputDir string, option *types.CommandOption) err
 		ext = ".ts"
 	}
 
-	fmt.Printf("モード: %s\n", *option.Mode)
-	fmt.Printf("出力先: %s\n", outputDir)
-	fmt.Println("生成予定ファイル:")
+	fmt.Printf("%s: %s\n", i18n.T(i18n.MsgMode), *option.Mode)
+	fmt.Printf("%s: %s\n", i18n.T(i18n.MsgOutputDirectory), outputDir)
+	fmt.Printf("%s:\n", i18n.T(i18n.MsgFilesToBeGenerated))
 
 	if !info.IsDir() {
-		return fmt.Errorf("入力にはディレクトリを指定してください")
+		return fmt.Errorf(i18n.T(i18n.MsgInputMustBeDir))
 	}
 
 	var files []string
@@ -103,7 +104,7 @@ func validateOnly(inputPath string) error {
 	}
 
 	if !info.IsDir() {
-		return fmt.Errorf("入力にはディレクトリを指定してください")
+		return fmt.Errorf(i18n.T(i18n.MsgInputMustBeDir))
 	}
 
 	return filepath.Walk(inputPath, func(path string, info os.FileInfo, err error) error {
@@ -112,7 +113,7 @@ func validateOnly(inputPath string) error {
 		}
 		_, err = utils.ParseSchemaFile(&path)
 		if err != nil {
-			return fmt.Errorf("ファイル %s: %v", path, err)
+			return fmt.Errorf("%s %s: %v", i18n.T(i18n.MsgFileError), path, err)
 		}
 		fmt.Printf("✓ %s\n", path)
 		return nil
@@ -122,25 +123,32 @@ func validateOnly(inputPath string) error {
 func main() {
 	option, err := utils.GetCommandOption()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "コマンドライン引数エラー: %v\n", err)
+		// i18n初期化前なのでデフォルトメッセージを使用
+		fmt.Fprintf(os.Stderr, "Command line argument error: %v\n", err)
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	// i18nシステムを初期化
+	if err := i18n.Init(*option.Locale); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to initialize i18n: %v\n", err)
+		// エラーでも続行（英語デフォルトで動作）
 	}
 
 	// バリデーションモードの場合は検証のみを実行
 	if *option.Validate {
 		if err := validateOnly(*option.SchemaFile); err != nil {
-			fmt.Fprintf(os.Stderr, "バリデーションエラー: %v\n", err)
+			fmt.Fprintf(os.Stderr, "%s: %v\n", i18n.T(i18n.MsgValidationError), err)
 			os.Exit(1)
 		}
-		fmt.Println("バリデーション成功: JSON定義に問題ありません")
+		fmt.Println(i18n.T(i18n.MsgValidationSuccess))
 		return
 	}
 
 	// ドライランモードの場合は生成予定ファイル一覧を表示
 	if *option.DryRun {
 		if err := dryRunPreview(*option.SchemaFile, *option.OutputFile, option); err != nil {
-			fmt.Fprintf(os.Stderr, "ドライランエラー: %v\n", err)
+			fmt.Fprintf(os.Stderr, "%s: %v\n", i18n.T(i18n.MsgDryRunError), err)
 			os.Exit(1)
 		}
 		return
@@ -149,19 +157,19 @@ func main() {
 	inputPath := *option.SchemaFile
 	info, err := os.Stat(inputPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "入力パス取得エラー: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", i18n.T(i18n.MsgInputPathError), err)
 		os.Exit(1)
 	}
 
 	// ディレクトリのみ対応
 	if !info.IsDir() {
-		fmt.Fprintln(os.Stderr, "エラー: 入力にはディレクトリを指定してください")
+		fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgInputMustBeDir))
 		os.Exit(1)
 	}
 
 	// 出力先が拡張子付きファイル名の場合はエラー
 	if filepath.Ext(*option.OutputFile) != "" {
-		fmt.Fprintln(os.Stderr, "エラー: -o にはディレクトリを指定してください")
+		fmt.Fprintln(os.Stderr, i18n.T(i18n.MsgOutputMustBeDir))
 		os.Exit(1)
 	}
 
@@ -169,7 +177,7 @@ func main() {
 	isTS := strings.ToLower(*option.Mode) == "ts"
 
 	if err := process.ProcessDirectory(inputPath, *option.OutputFile, option, isTS); err != nil {
-		fmt.Fprintf(os.Stderr, "処理エラー: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%s: %v\n", i18n.T(i18n.MsgProcessingError), err)
 		os.Exit(1)
 	}
 }

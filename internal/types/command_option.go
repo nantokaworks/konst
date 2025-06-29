@@ -11,4 +11,5 @@ type CommandOption struct {
 	DryRun       *bool   // ドライラン
 	Watch        *bool   // ウォッチモード
 	NamingStyle  *string // ファイル命名規則 (kebab, camel, snake)
+	Locale       *string // 言語設定 (ja, en)
 }

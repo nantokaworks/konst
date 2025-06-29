@@ -6,26 +6,43 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/nantokaworks/konst/internal/i18n"
 	"github.com/nantokaworks/konst/internal/types"
 )
 
-const VERSION string = "v0.3.4"
+const VERSION string = "v0.3.5"
 
 func GetCommandOption() (*types.CommandOption, error) {
 
+	// --localeフラグを事前にチェック（ヘルプメッセージのため）
+	locale := ""
+	for i, arg := range os.Args {
+		if arg == "--locale" && i+1 < len(os.Args) {
+			locale = os.Args[i+1]
+			break
+		} else if len(arg) > 9 && arg[:9] == "--locale=" {
+			locale = arg[9:]
+			break
+		}
+	}
+	
+	// ヘルプメッセージの初期化（flag.Parse前に呼ぶ必要がある）
+	i18n.InitHelpMessagesWithLocale(locale)
+
 	// コマンドライン引数のパース
-	schemaFile := flag.String("i", "", "定数定義のJSONファイルまたはディレクトリ（指定がなければ最初の引数を使用）")
-	outputFile := flag.String("o", "", "出力先ディレクトリ（必須）")
-	templateDirFlag := flag.String("t", "", "カスタムテンプレートディレクトリのパス（省略時は環境変数 KONST_TEMPLATES、なければ実行ファイルと同じ場所のtemplatesディレクトリを使用）")
-	forceFlag := flag.Bool("f", false, "既存ファイルを強制的に上書きする")
-	indentFlag := flag.Int("indent", 2, "インデント数（デフォルトは2）")
-	versionFlag := flag.Bool("v", false, "バージョンを表示する")
-	versionLFlag := flag.Bool("version", false, "バージョンを表示する")
-	modeFlag := flag.String("m", "go", "出力モードを指定する（go, ts）")
-	validateFlag := flag.Bool("validate", false, "JSON定義の検証のみを行う（コード生成は行わない）")
-	dryRunFlag := flag.Bool("dry-run", false, "実際の生成は行わず、生成予定のファイル一覧を表示する")
-	watchFlag := flag.Bool("watch", false, "ファイル変更を監視して自動生成する（実験的機能）")
-	namingStyleFlag := flag.String("naming", "", "ファイル命名規則（kebab, camel, snake）TypeScriptはデフォルトでkebab、Goはデフォルトでsnake")
+	schemaFile := flag.String("i", "", i18n.GetHelpMessage(i18n.HelpInputFile))
+	outputFile := flag.String("o", "", i18n.GetHelpMessage(i18n.HelpOutputDir))
+	templateDirFlag := flag.String("t", "", i18n.GetHelpMessage(i18n.HelpTemplateDir))
+	forceFlag := flag.Bool("f", false, i18n.GetHelpMessage(i18n.HelpForce))
+	indentFlag := flag.Int("indent", 2, i18n.GetHelpMessage(i18n.HelpIndent))
+	versionFlag := flag.Bool("v", false, i18n.GetHelpMessage(i18n.HelpVersion))
+	versionLFlag := flag.Bool("version", false, i18n.GetHelpMessage(i18n.HelpVersion))
+	modeFlag := flag.String("m", "go", i18n.GetHelpMessage(i18n.HelpMode))
+	validateFlag := flag.Bool("validate", false, i18n.GetHelpMessage(i18n.HelpValidate))
+	dryRunFlag := flag.Bool("dry-run", false, i18n.GetHelpMessage(i18n.HelpDryRun))
+	watchFlag := flag.Bool("watch", false, i18n.GetHelpMessage(i18n.HelpWatch))
+	namingStyleFlag := flag.String("naming", "", i18n.GetHelpMessage(i18n.HelpNaming))
+	localeFlag := flag.String("locale", "", i18n.GetHelpMessage(i18n.HelpLocale))
 	flag.Parse()
 
 	// バージョン表示処理
@@ -46,7 +63,7 @@ func GetCommandOption() (*types.CommandOption, error) {
 
 	// 出力先のチェック（バリデーションモード以外では必須）
 	if *outputFile == "" && !*validateFlag {
-		return nil, fmt.Errorf("出力ファイル名を -o オプションで指定してください")
+		return nil, fmt.Errorf("please specify output filename with -o option")
 	}
 
 	// テンプレートディレクトリのパスを取得
@@ -57,9 +74,24 @@ func GetCommandOption() (*types.CommandOption, error) {
 	if tmplDir == "" {
 		exePath, err := os.Executable()
 		if err != nil {
-			return nil, fmt.Errorf("実行ファイルパス取得エラー: %v", err)
+			return nil, fmt.Errorf("executable path error: %v", err)
 		}
 		tmplDir = filepath.Join(filepath.Dir(exePath), "templates")
+	}
+
+	// 言語設定を決定（優先順位順）
+	finalLocale := *localeFlag
+	if finalLocale == "" {
+		// 1. KONST_LOCALE環境変数をチェック
+		finalLocale = os.Getenv("KONST_LOCALE")
+	}
+	if finalLocale == "" {
+		// 2. システムロケールを自動検出
+		finalLocale = i18n.DetectSystemLocale()
+	}
+	if finalLocale == "" {
+		// 3. 最終的なフォールバック
+		finalLocale = "en"
 	}
 
 	return &types.CommandOption{
@@ -73,5 +105,6 @@ func GetCommandOption() (*types.CommandOption, error) {
 		DryRun:      dryRunFlag,
 		Watch:       watchFlag,
 		NamingStyle: namingStyleFlag,
+		Locale:      &finalLocale,
 	}, nil
 }
