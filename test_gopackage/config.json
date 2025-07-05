@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "goPackage": "config",
+  "definitions": {
+    "ConfigPort": {
+      "type": "int",
+      "value": 8080
+    },
+    "ConfigHost": {
+      "type": "string",
+      "value": "localhost"
+    }
+  }
+}

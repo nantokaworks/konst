@@ -15,6 +15,7 @@ API通信での型安全性を向上させ、多言語間での定数管理を�
 | 🔧 **開発支援機能** | バリデーション・ドライラン・ウォッチモード |
 | 📁 **ディレクトリ処理** | 複数ファイル一括処理とindex.ts自動生成 |
 | 🗣️ **i18n対応** | 日本語・英語のヘルプメッセージとシステムロケール自動検出 |
+| 📦 **パッケージ分離** | 異なるgoPackageを持つファイルを自動的に別ディレクトリに配置 |
 
 ## 📋 JSON 定義フォーマット
 
@@ -125,6 +126,26 @@ go install github.com/yourusername/konst@latest
 
 Konst は **出力ディレクトリ（`-o`）** と **出力モード（`-m`）** の指定が必要です。  
 入力は単一ファイルまたはディレクトリを指定できます。
+
+### 📦 Go パッケージ分離機能
+
+Go出力では、異なる `goPackage` を持つJSONファイルが自動的に別々のディレクトリに配置されます：
+
+```bash
+# 入力ディレクトリ構成
+definitions/
+├── config.json    # "goPackage": "config"
+└── database.json  # "goPackage": "database"
+
+# 出力結果
+generated/
+├── config/
+│   └── config.go     # package config
+└── database/
+    └── database.go   # package database
+```
+
+これにより、同じディレクトリに異なるパッケージが混在することによるGoのビルドエラーを防げます。
 
 ### 🔥 基本的な使い方
 

@@ -1,0 +1,14 @@
+{
+  "version": "1.0",
+  "goPackage": "database",
+  "definitions": {
+    "DatabaseHost": {
+      "type": "string",
+      "value": "localhost"
+    },
+    "DatabasePort": {
+      "type": "int",
+      "value": 5432
+    }
+  }
+}

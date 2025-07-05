@@ -59,10 +59,23 @@ func ProcessFileWithResolvedDependencies(jsonPath, inputDir, outDir string, opti
 	
 	// 出力パスを構築
 	var outFilePath string
-	if convertedDir != "." {
-		outFilePath = filepath.Join(outDir, convertedDir, convertedFileName+outExt)
+	
+	// Goの場合、goPackageごとにサブディレクトリを作成
+	if !isTS && schema.GoPackage != "" {
+		// goPackageをディレクトリ名として使用
+		packageDir := schema.GoPackage
+		if convertedDir != "." {
+			outFilePath = filepath.Join(outDir, convertedDir, packageDir, convertedFileName+outExt)
+		} else {
+			outFilePath = filepath.Join(outDir, packageDir, convertedFileName+outExt)
+		}
 	} else {
-		outFilePath = filepath.Join(outDir, convertedFileName+outExt)
+		// TypeScriptまたはgoPackageが空の場合は従来通り
+		if convertedDir != "." {
+			outFilePath = filepath.Join(outDir, convertedDir, convertedFileName+outExt)
+		} else {
+			outFilePath = filepath.Join(outDir, convertedFileName+outExt)
+		}
 	}
 
 	tmpl, err := template.Load(&outFilePath, option.TemplateDir, option.Indent)

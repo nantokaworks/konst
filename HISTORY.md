@@ -2,6 +2,27 @@
 
 Konstの開発履歴とバージョン別変更点を記録しています。
 
+## v0.3.6 (2025-07-05)
+
+### 🔧 修正
+- **Go出力の改善**: 同一ディレクトリ内で異なる`goPackage`を持つJSONファイルの処理を改善
+  - 各`goPackage`ごとに自動的にサブディレクトリを作成
+  - パッケージ名の競合によるビルドエラーを解決
+  - 例: `config.json` (goPackage: "config") → `output/config/config.go`
+  - 例: `database.json` (goPackage: "database") → `output/database/database.go`
+
+### 🔄 影響範囲
+- `internal/process/file.go`: Go出力時のパス構築ロジック改善
+- `internal/process/file_resolver.go`: 依存関係解決時のパス構築ロジック改善
+
+### 📝 使用方法
+```bash
+# 異なるgoPackageを持つファイルがある場合
+konst -i ./definitions -o ./output -m go -f
+# → output/config/config.go (package config)
+# → output/database/database.go (package database)
+```
+
 ## v0.3.5 (2025-06-29)
 
 ### 🌐 主要機能追加
